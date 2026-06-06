@@ -201,8 +201,8 @@ h1,h2,h3,h4,.display{font-family:'Montserrat',sans-serif;font-weight:800;line-he
 .reassure{display:inline-flex;align-items:center;gap:12px;background:var(--mist);border:1px dashed var(--teal);border-radius:12px;padding:14px 20px;font-weight:600;color:var(--teal-deep);font-size:15px}
 
 /* ---------- how it works (stepper) ---------- */
-.steps{display:grid;grid-template-columns:repeat(5,1fr);gap:0;counter-reset:s;position:relative}
-.step{position:relative;padding:0 16px}
+.steps{display:grid;grid-template-columns:repeat(6,1fr);gap:0;counter-reset:s;position:relative}
+.step{position:relative;padding:0 13px}
 .step .sn{width:60px;height:60px;border-radius:50%;background:#fff;border:2px solid var(--teal);color:var(--teal-deep);display:flex;align-items:center;justify-content:center;font-family:'Montserrat',sans-serif;font-weight:800;font-size:22px;margin-bottom:22px;position:relative;z-index:2;transition:.3s}
 .step:hover .sn{background:var(--teal);color:#fff;transform:scale(1.06)}
 .step::before{content:"";position:absolute;top:30px;left:50%;right:-50%;height:2px;background:repeating-linear-gradient(90deg,var(--teal) 0 7px,transparent 7px 14px);z-index:1}
@@ -237,6 +237,12 @@ h1,h2,h3,h4,.display{font-family:'Montserrat',sans-serif;font-weight:800;line-he
 .titem.hl .tcard h4{color:#fff}
 .titem.hl .tcard p{color:var(--teal-light)}
 .titem.hl .tdate{color:var(--teal)}
+.final-rounds{list-style:none;display:flex;flex-direction:column;gap:10px;margin:14px 0 4px}
+.final-rounds li{display:flex;flex-direction:column;gap:2px;padding:12px 16px;background:rgba(114,217,191,.10);border:1px solid rgba(114,217,191,.28);border-radius:12px}
+.final-rounds .fr-k{font-family:'Montserrat',sans-serif;font-weight:800;font-size:14px;color:var(--teal)}
+.final-rounds .fr-v{font-size:13.5px;color:#cfdaee;line-height:1.4}
+.titem.hl .tcard .fr-foot{margin-top:12px;font-size:13px;font-weight:600;color:#fff;display:flex;align-items:center;gap:7px}
+.titem.hl .tcard .fr-foot::before{content:"★";color:var(--teal);font-size:13px}
 
 /* ---------- pathway ladder ---------- */
 .pathway{background:var(--navy);position:relative;overflow:hidden}
@@ -406,9 +412,31 @@ h1,h2,h3,h4,.display{font-family:'Montserrat',sans-serif;font-weight:800;line-he
 .vision-inner{position:relative;z-index:2;max-width:880px;margin:0 auto}
 .vision-inner .eyebrow{margin-left:auto;margin-right:auto;display:inline-flex}
 .vision-inner h2{color:#fff;font-size:clamp(34px,5.5vw,68px);letter-spacing:.04em;margin-bottom:24px}
-.vision-inner h2 .ac{color:#fff}
+.vision-inner h2 .ac{color:var(--white)}
 .vision-inner p{color:#cfdaee;font-size:clamp(17px,1.9vw,22px);line-height:1.6;text-wrap:pretty}
 .vision-inner p b{color:var(--teal-light);font-weight:600}
+
+/* ---------- who's hosting ---------- */
+.host-grid{display:grid;grid-template-columns:1.25fr .75fr;gap:56px;align-items:center}
+.host-grid h2{font-size:clamp(30px,4vw,48px);margin-bottom:20px}
+.host-grid h2 .teal{color:var(--teal-deep)}
+.host-grid .lead{font-size:clamp(15px,1.5vw,18px);color:var(--muted);margin-bottom:22px}
+.host-grid .lead b{color:var(--navy);font-weight:700}
+.host-mission{font-size:15px;color:var(--navy);background:var(--mist);border-left:3px solid var(--teal);border-radius:0 12px 12px 0;padding:14px 18px;margin-bottom:24px}
+.host-mission .hm-k{display:block;font-family:'Montserrat',sans-serif;font-weight:800;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--teal-deep);margin-bottom:4px}
+.host-pillars{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:28px}
+.host-pillars .pill{font-family:'Montserrat',sans-serif;font-weight:700;font-size:13px;color:var(--navy);background:#fff;border:1px solid var(--line);padding:9px 15px;border-radius:999px}
+.host-links{display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+.host-ig{display:inline-flex;align-items:center;gap:8px;font-family:'Montserrat',sans-serif;font-weight:700;font-size:14px;color:var(--teal-deep);text-decoration:none}
+.host-ig:hover{color:var(--navy)}
+.host-media{display:flex;flex-direction:column;gap:14px}
+.host-gallery{display:grid;grid-template-columns:1.25fr 1fr;grid-template-rows:1fr 1fr;gap:12px;height:340px}
+.host-gallery image-slot{width:100%;height:100%;display:block;box-shadow:var(--shadow);border-radius:16px;overflow:hidden;background:#fff}
+.host-gallery .g-tall{grid-row:1/3}
+.host-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.host-stats .hs{display:flex;flex-direction:column;gap:2px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;text-align:center}
+.host-stats .hs-v{font-family:'Montserrat',sans-serif;font-weight:900;color:var(--navy);font-size:22px;line-height:1}
+.host-stats .hs-k{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--teal-deep)}
 
 /* ---------- scroll reveal ---------- */
 .reveal{opacity:0;transform:translateY(26px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
@@ -437,6 +465,8 @@ h1,h2,h3,h4,.display{font-family:'Montserrat',sans-serif;font-weight:800;line-he
   .foot-grid{grid-template-columns:1fr 1fr;gap:32px}
   .foot-brand{grid-column:1/-1}
   .whatis-grid{grid-template-columns:1fr;gap:36px}
+  .host-grid{grid-template-columns:1fr;gap:36px}
+  .host-gallery{height:300px}
   .whatis-photo{aspect-ratio:16/10;max-height:380px;order:-1}
   .venue-strip{grid-template-columns:1fr;gap:20px;text-align:left;padding:28px 30px}
   .venue-strip .vs-sep{display:none}

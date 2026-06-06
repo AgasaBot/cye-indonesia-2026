@@ -63,7 +63,7 @@
   const nextBtn = $('#nextBtn');
   const backBtn = $('#backBtn');
   const actions = $('#formActions');
-  const labels = ['About you','Your business','Your submission','Review & payment','Done'];
+  const labels = ['About you','Your business','Your submission','Review & submit','Done'];
   let cur = 1; // 1..5
   const TOTAL_FORM = 3;   // collecting steps
   const REVIEW = 4, SUCCESS = 5;
@@ -87,7 +87,7 @@
     backBtn.style.visibility = (n === 1 || n === SUCCESS) ? 'hidden' : 'visible';
     if (n === SUCCESS){ actions.style.display = 'none'; }
     else { actions.style.display = 'flex'; }
-    if (n === REVIEW) nextBtn.innerHTML = 'Pay IDR 150,000 <span class="arw">→</span>';
+    if (n === REVIEW) nextBtn.innerHTML = 'Submit registration <span class="arw">→</span>';
     else if (n === TOTAL_FORM) nextBtn.innerHTML = 'Review <span class="arw">→</span>';
     else nextBtn.innerHTML = 'Continue <span class="arw">→</span>';
 
@@ -148,33 +148,78 @@
       ['Active for', ({'3-6':'3–6 months','6-12':'6–12 months','1-2':'1–2 years','2plus':'2+ years'})[get('duration')] || '—'],
       ['JCI member', get('jci') === 'yes' ? 'Yes' : 'No'],
       ['Participation', get('participation')],
+      ['Pitch video', get('videolink') || '—'],
     ];
     $('#reviewList').innerHTML = rows.map(([k,v]) => `<dt>${k}</dt><dd>${escapeHtml(v)}</dd>`).join('');
   }
   function escapeHtml(s){ return s.replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 
-  /* ---- placeholder spreadsheet submission (swap endpoint later) ---- */
-  function submitToSpreadsheet(){
-    const d = {}; new FormData(form).forEach((v,k) => { if (!(v instanceof File)) d[k] = v; });
-    d.submittedAt = new Date().toISOString();
-    // Swap this block for your real Google Sheet / Airtable / webhook POST.
-    // Example:
-    // fetch('YOUR_WEBHOOK_URL', {method:'POST', body: JSON.stringify(d)});
-    try { const all = JSON.parse(localStorage.getItem('cye_subs')||'[]'); all.push(d); localStorage.setItem('cye_subs', JSON.stringify(all)); } catch(e){}
-    console.log('[CYE] Registration captured (placeholder):', d);
+  /* ---- registration submission ----
+     Posts to a Google Apps Script web app that appends a row to a Google Sheet
+     and saves uploaded files to a Google Drive folder. Set ENDPOINT to the
+     deployed web-app URL. Files (business plan PDF + headshot) are sent as
+     base64; the pitch video is collected as a link, not a file. */
+  const ENDPOINT = ''; // <-- paste the Apps Script web-app /exec URL here
+
+  function readFileAsBase64(file){
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result).split(',')[1] || '');
+      r.onerror = reject;
+      r.readAsDataURL(file);
+    });
   }
 
-  nextBtn.addEventListener('click', () => {
+  async function buildPayload(ref){
+    const fd = new FormData(form);
+    const payload = { ref, submittedAt: new Date().toISOString(), files: [] };
+    for (const [k, v] of fd.entries()){
+      if (v instanceof File){
+        if (v.size > 0) payload.files.push({ field: k, name: v.name, type: v.type, dataBase64: await readFileAsBase64(v) });
+      } else {
+        payload[k] = v;
+      }
+    }
+    return payload;
+  }
+
+  async function submitRegistration(ref){
+    const payload = await buildPayload(ref);
+    if (!ENDPOINT){
+      // No backend configured yet (preview): keep a local copy so nothing is lost.
+      try { const all = JSON.parse(localStorage.getItem('cye_subs')||'[]'); all.push(payload); localStorage.setItem('cye_subs', JSON.stringify(all)); } catch(e){}
+      console.warn('[CYE] ENDPOINT not set — registration stored locally only:', payload);
+      return;
+    }
+    // text/plain keeps this a "simple" request (no CORS preflight); Apps Script
+    // reads it from e.postData.contents. no-cors so the opaque response is fine.
+    await fetch(ENDPOINT, { method:'POST', mode:'no-cors', body: JSON.stringify(payload) });
+  }
+
+  let submitting = false;
+  nextBtn.addEventListener('click', async () => {
     if (cur <= TOTAL_FORM){
       if (!validateStep(cur)) return;
       if (cur === TOTAL_FORM){ buildReview(); showStep(REVIEW); }
       else showStep(cur + 1);
     } else if (cur === REVIEW){
-      // mock payment -> capture -> success
-      submitToSpreadsheet();
+      if (submitting) return;
+      submitting = true;
+      const errEl = $('#submitErr'); if (errEl) errEl.style.display = 'none';
+      const original = nextBtn.innerHTML;
+      nextBtn.disabled = true; nextBtn.innerHTML = 'Submitting…';
       const ref = 'CYE-2026-' + Math.floor(100000 + Math.random()*900000);
-      $('#refCode').textContent = 'REF · ' + ref;
-      showStep(SUCCESS);
+      try {
+        await submitRegistration(ref);
+        $('#refCode').textContent = 'REF · ' + ref;
+        showStep(SUCCESS);
+      } catch (e){
+        console.error('[CYE] submission failed', e);
+        if (errEl) errEl.style.display = 'block';
+        nextBtn.disabled = false; nextBtn.innerHTML = original;
+      } finally {
+        submitting = false;
+      }
     }
   });
   backBtn.addEventListener('click', () => {

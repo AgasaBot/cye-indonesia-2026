@@ -24,8 +24,24 @@ Open `index.html` directly, or serve the folder:
 python3 -m http.server 8000   # then visit http://localhost:8000
 ```
 
-## Going live — remaining hooks
+## Hosting & domain
 
-- **Form submission** currently writes to `localStorage` (`app.js` → `submitToSpreadsheet`). Swap in a real Google Sheet / Airtable / webhook POST.
-- **Payment** is a labeled demo panel — connect a real gateway before launch.
-- **Timeline dates** marked `TBD` (application deadline, shortlist, preliminary round) await confirmation.
+- Hosted free on **GitHub Pages** from `main` (root). Live build:
+  <https://agasabot.github.io/cye-indonesia-2026/>.
+- Custom domain **cye-indonesia.com** (registrar: Domainesia) is pointed at
+  GitHub Pages via DNS; the `CNAME` file holds the domain and GitHub issues a
+  free HTTPS certificate for it.
+
+## Registration form
+
+- **No payment is taken on the site.** The form collects details + a business
+  plan, headshot, and a pitch-video *link*, then submits. The IDR 150,000 fee is
+  arranged manually afterwards (the copy says so, and the confirmation email
+  repeats it).
+- **Submissions** post to a Google Apps Script web app → a **Google Sheet**
+  (data) + **Google Drive** folder (files). Set up via
+  [`apps-script/SETUP.md`](apps-script/SETUP.md); the deployed `/exec` URL goes
+  into `app.js` as `ENDPOINT`. While `ENDPOINT` is empty the form keeps a local
+  copy (preview only).
+- **Timeline dates** are filled in from the design (deadline 31 Aug 2026, Top 30
+  early Sep, National Final 3 Oct 2026).
