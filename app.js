@@ -236,7 +236,7 @@
 
   /* ---------- WhatsApp CTA prefill ---------- */
   (function(){
-    const num = '6285121064884';
+    const num = '6281905687888';
     const isHttp = /^https?:/.test(location.protocol);
     const site = isHttp ? (location.origin + location.pathname) : '';
     const msg = 'Hello, I would like to know more about CYE Indonesia' + (site ? '\n\n' + site : '');
