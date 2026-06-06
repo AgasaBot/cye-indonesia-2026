@@ -99,7 +99,7 @@ function sendConfirmation_(d) {
     'Thank you for registering for the Creative Young Entrepreneur Award — Indonesia 2026.\n' +
     'We have received your registration. Your reference number is ' + (d.ref || '') + '.\n\n' +
     'There is nothing to pay right now. Our team will contact you on WhatsApp or email with the ' +
-    'IDR 150,000 registration fee details, and about any materials still to send.\n\n' +
+    'IDR 200,000 registration fee details, and about any materials still to send.\n\n' +
     'National Final: 3 October 2026 — APL Tower L22, Galilee Centre, Jakarta.\n\n' +
     'See you on the world stage,\nJCI Nusantara · CYE Indonesia 2026';
   MailApp.sendEmail(d.email, subject, body);
