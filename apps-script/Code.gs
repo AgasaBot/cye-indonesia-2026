@@ -12,6 +12,9 @@
  * See SETUP.md for the one-time deploy steps.
  */
 
+// If deploying as a STANDALONE script (script.new), put the responses
+// spreadsheet ID here. If bound to the Sheet (Extensions → Apps Script), leave ''.
+const SPREADSHEET_ID = '';
 // Optional: receive an email copy of every new submission. Leave '' to skip.
 const NOTIFY_EMAIL = 'cye-indonesia@jcinusantara.com';
 // Drive folder where uploaded files are stored (created automatically).
@@ -43,7 +46,7 @@ function doPost(e) {
 
     const durations = { 'under': '<3 months', '3-6': '3–6 months', '6-12': '6–12 months', '1-2': '1–2 years', '2plus': '2+ years' };
     const sheet = getSheet_();
-    sheet.appendRow([
+    const row = [
       data.submittedAt || new Date().toISOString(),
       data.ref || '',
       data.fullname || '', data.email || '', data.phone || '', data.age || '', data.city || '',
@@ -51,7 +54,11 @@ function doPost(e) {
       data.jci === 'yes' ? 'Yes' : 'No', data.participation || '',
       data.videolink || '', data.planlink || '',
       fileUrls.plan || '', fileUrls.headshot || ''
-    ]);
+    ];
+    // Write as plain text so values like phone "+62..." aren't parsed as formulas.
+    const target = sheet.getRange(sheet.getLastRow() + 1, 1, 1, row.length);
+    target.setNumberFormat('@');
+    target.setValues([row]);
 
     if (data.email) sendConfirmation_(data);
     if (NOTIFY_EMAIL) notifyOrganizer_(data, fileUrls);
@@ -70,7 +77,7 @@ function doGet() {
 }
 
 function getSheet_() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
   let sheet = ss.getSheetByName(SHEET_NAME) || ss.insertSheet(SHEET_NAME);
   if (sheet.getLastRow() === 0) {
     sheet.appendRow(HEADERS);

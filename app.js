@@ -159,7 +159,7 @@
      and saves uploaded files to a Google Drive folder. Set ENDPOINT to the
      deployed web-app URL. Files (business plan PDF + headshot) are sent as
      base64; the pitch video is collected as a link, not a file. */
-  const ENDPOINT = ''; // <-- paste the Apps Script web-app /exec URL here
+  const ENDPOINT = 'https://script.google.com/macros/s/AKfycbwY5zaPSyDHNjbjvBsBUbMrjWd_mMPWyywfEFBIFtsgkmodhG8D9gxC9dGezsCf6iwN/exec';
 
   function readFileAsBase64(file){
     return new Promise((resolve, reject) => {
