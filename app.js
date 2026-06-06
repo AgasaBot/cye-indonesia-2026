@@ -234,4 +234,14 @@
     if (e.target.name === 'consent'){ const cm = $('#consentMsg'); if (cm) cm.style.display = 'none'; }
   });
 
+  /* ---------- WhatsApp CTA prefill ---------- */
+  (function(){
+    const num = '6285121064884';
+    const isHttp = /^https?:/.test(location.protocol);
+    const site = isHttp ? (location.origin + location.pathname) : '';
+    const msg = 'Hello, I would like to know more about CYE Indonesia' + (site ? '\n\n' + site : '');
+    const href = 'https://wa.me/' + num + '?text=' + encodeURIComponent(msg);
+    $$('.js-wa').forEach(a => { a.href = href; });
+  })();
+
 })();

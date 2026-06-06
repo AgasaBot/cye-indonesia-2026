@@ -431,12 +431,30 @@ h1,h2,h3,h4,.display{font-family:'Montserrat',sans-serif;font-weight:800;line-he
 .host-ig:hover{color:var(--navy)}
 .host-media{display:flex;flex-direction:column;gap:14px}
 .host-gallery{display:grid;grid-template-columns:1.25fr 1fr;grid-template-rows:1fr 1fr;gap:12px;height:340px}
-.host-gallery image-slot{width:100%;height:100%;display:block;box-shadow:var(--shadow);border-radius:16px;overflow:hidden;background:#fff}
+.host-gallery img{width:100%;height:100%;display:block;object-fit:cover;box-shadow:var(--shadow);border-radius:16px;overflow:hidden;background:#fff}
 .host-gallery .g-tall{grid-row:1/3}
 .host-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
 .host-stats .hs{display:flex;flex-direction:column;gap:2px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px 16px;text-align:center}
 .host-stats .hs-v{font-family:'Montserrat',sans-serif;font-weight:900;color:var(--navy);font-size:22px;line-height:1}
 .host-stats .hs-k{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--teal-deep)}
+
+/* ---------- WhatsApp floating CTA ---------- */
+.wa-fab{position:fixed;right:22px;bottom:22px;z-index:90;display:flex;align-items:center;gap:0;
+  height:60px;width:60px;padding:0;border-radius:999px;background:var(--navy);color:#fff;
+  text-decoration:none;box-shadow:0 14px 32px -10px rgba(10,15,41,.6),0 0 0 4px rgba(114,217,191,.18);
+  overflow:hidden;transition:width .35s var(--ease),background .25s,box-shadow .25s;white-space:nowrap}
+.wa-fab svg{flex:0 0 60px;width:60px;height:60px;padding:16px;color:var(--teal)}
+.wa-fab .wa-label{font-family:'Montserrat',sans-serif;font-weight:800;font-size:15px;opacity:0;
+  padding-right:0;transition:opacity .25s,padding .25s}
+.wa-fab:hover{width:208px;background:#0d1430}
+.wa-fab:hover .wa-label{opacity:1;padding-right:24px}
+.wa-fab:focus-visible{outline:3px solid var(--teal);outline-offset:3px}
+@media(max-width:600px){
+  .wa-fab{right:16px;bottom:16px;height:56px;width:56px}
+  .wa-fab svg{flex-basis:56px;width:56px;height:56px;padding:15px}
+  .wa-fab:hover{width:56px}
+  .wa-fab:hover .wa-label{opacity:0;padding-right:0}
+}
 
 /* ---------- scroll reveal ---------- */
 .reveal{opacity:0;transform:translateY(26px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
