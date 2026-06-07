@@ -6,7 +6,7 @@ The website form sends each registration to a **Google Apps Script web app**, wh
 - saves the uploaded **business plan (PDF)** and **headshot** into a **Google Drive** folder, and
 - emails the applicant a confirmation (and optionally emails you a copy).
 
-No payment is taken — you collect the IDR 200,000 fee manually afterwards.
+No payment is taken — you collect the fee (IDR 200,000 early bird, IDR 300,000 from 1 Aug 2026) manually afterwards.
 
 > Do this while signed in to the Google account that should **own** the responses
 > (e.g. `cye-indonesia@jcinusantara.com`). I can also do these steps for you in
