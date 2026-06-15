@@ -35,7 +35,7 @@ python3 -m http.server 8000   # then visit http://localhost:8000
 ## Registration form
 
 - **No payment is taken on the site.** The form collects details + a business
-  plan, headshot, and a pitch-video *link*, then submits. The fee (IDR 200,000 early bird, IDR 300,000 from 1 Aug 2026) is
+  introduction deck, headshot, and a pitch-video *link*, then submits. The fee (IDR 200,000 early bird, IDR 300,000 from 1 Aug 2026) is
   arranged manually afterwards (the copy says so, and the confirmation email
   repeats it).
 - **Submissions** post to a Google Apps Script web app → a **Google Sheet**
