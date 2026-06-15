@@ -5,7 +5,7 @@
  * Extensions → Apps Script, then paste this file).
  *
  * It receives JSON POSTs from the website registration form, appends a
- * row to the Sheet, saves uploaded files (business plan PDF + headshot)
+ * row to the Sheet, saves uploaded files (business introduction deck + headshot)
  * to a Google Drive folder, and emails the applicant a confirmation.
  *
  * No payment is handled here — the fee is collected manually afterwards.
@@ -24,7 +24,7 @@ const SHEET_NAME = 'Registrations';
 
 const HEADERS = ['Timestamp', 'Ref', 'Full name', 'Email', 'Phone', 'Age', 'City',
   'Business', 'Sector', 'Active for', 'JCI member', 'Participation',
-  'Pitch video link', 'Business plan link', 'Business plan file', 'Headshot file'];
+  'Pitch video link', 'Business intro deck link', 'Business intro deck file', 'Headshot file'];
 
 function doPost(e) {
   const lock = LockService.getScriptLock();
@@ -112,8 +112,8 @@ function notifyOrganizer_(d, fileUrls) {
     'Phone: ' + (d.phone || ''), 'Age: ' + (d.age || ''), 'City: ' + (d.city || ''),
     'Business: ' + (d.business || ''), 'Sector: ' + (d.sector || ''),
     'Participation: ' + (d.participation || ''), 'JCI member: ' + (d.jci || ''),
-    'Pitch video: ' + (d.videolink || ''), 'Plan link: ' + (d.planlink || ''),
-    'Plan file: ' + (fileUrls.plan || ''), 'Headshot: ' + (fileUrls.headshot || '')
+    'Pitch video: ' + (d.videolink || ''), 'Deck link: ' + (d.planlink || ''),
+    'Deck file: ' + (fileUrls.plan || ''), 'Headshot: ' + (fileUrls.headshot || '')
   ];
   MailApp.sendEmail(NOTIFY_EMAIL, subject, lines.join('\n'));
 }
