@@ -189,11 +189,12 @@
       // No backend configured yet (preview): keep a local copy so nothing is lost.
       try { const all = JSON.parse(localStorage.getItem('cye_subs')||'[]'); all.push(payload); localStorage.setItem('cye_subs', JSON.stringify(all)); } catch(e){}
       console.warn('[CYE] ENDPOINT not set — registration stored locally only:', payload);
-      return;
+      return {};
     }
-    // text/plain keeps this a "simple" request (no CORS preflight); Apps Script
-    // reads it from e.postData.contents. no-cors so the opaque response is fine.
-    await fetch(ENDPOINT, { method:'POST', mode:'no-cors', body: JSON.stringify(payload) });
+    // text/plain body keeps this a "simple" request (no CORS preflight); Apps Script
+    // reads it from e.postData.contents and returns JSON (it sends Access-Control-Allow-Origin: *).
+    const res = await fetch(ENDPOINT, { method:'POST', body: JSON.stringify(payload) });
+    try { return await res.json(); } catch(e){ return {}; }
   }
 
   let submitting = false;
@@ -210,8 +211,9 @@
       nextBtn.disabled = true; nextBtn.innerHTML = 'Submitting…';
       const ref = 'CYE-2026-' + Math.floor(100000 + Math.random()*900000);
       try {
-        await submitRegistration(ref);
+        const result = await submitRegistration(ref);
         $('#refCode').textContent = 'REF · ' + ref;
+        setupPayment(ref, result || {});
         showStep(SUCCESS);
       } catch (e){
         console.error('[CYE] submission failed', e);
@@ -233,6 +235,53 @@
     if (f) f.classList.remove('err');
     if (e.target.name === 'consent'){ const cm = $('#consentMsg'); if (cm) cm.style.display = 'none'; }
   });
+
+  /* ---------- Midtrans payment (optional, shown on the success screen) ---------- */
+  let payRef = null;
+  function fmtIDR(n){ return 'IDR ' + Number(n || 0).toLocaleString('en-US'); }
+  function setupPayment(ref, result){
+    const payNow = $('#payNow'), payFallback = $('#payFallback');
+    const amount = result.amount || 200000;
+    const amtEl = $('#payAmount'); if (amtEl) amtEl.textContent = fmtIDR(amount);
+    const badge = $('#payBadge'); if (badge) badge.textContent = amount <= 200000 ? 'early bird' : 'standard';
+    if (result.snapToken && window.snap){
+      payRef = ref;
+      if (payNow){ payNow.dataset.token = result.snapToken; payNow.style.display = ''; }
+      if (payFallback) payFallback.style.display = 'none';
+    } else {
+      if (payNow) payNow.style.display = 'none';
+      if (payFallback) payFallback.style.display = '';
+    }
+  }
+  function setPayStatus(msg, color){ const el = $('#payStatus'); if (el){ el.textContent = msg; el.style.color = color || 'inherit'; el.style.display = ''; } }
+  async function verifyPayment(ref){
+    if (!ENDPOINT || !ref) return null;
+    try { const r = await fetch(ENDPOINT, { method:'POST', body: JSON.stringify({ action:'paymentCheck', order_id: ref }) }); return await r.json(); } catch(e){ return null; }
+  }
+  const payBtn = $('#payBtn');
+  if (payBtn) payBtn.addEventListener('click', () => {
+    const pn = $('#payNow'); const tok = pn && pn.dataset.token;
+    if (!tok || !window.snap) return;
+    window.snap.pay(tok, {
+      onSuccess: () => onPaid('success'),
+      onPending: () => onPaid('pending'),
+      onError:   () => setPayStatus('Payment didn’t go through. You can try again.', '#d23a57'),
+      onClose:   () => setPayStatus('Payment window closed — you can pay anytime from the link in your email.', '')
+    });
+  });
+  async function onPaid(kind){
+    setPayStatus('Verifying your payment…', '');
+    const j = await verifyPayment(payRef);
+    const label = (j && j.label) || (kind === 'success' ? 'Paid' : 'Pending');
+    if (/paid/i.test(label)){
+      setPayStatus('✓ Payment received — thank you! Your spot is confirmed.', 'var(--teal-deep)');
+      if (payBtn) payBtn.style.display = 'none';
+    } else {
+      setPayStatus('Payment status: ' + label + '. We’ll confirm once it settles.', '');
+    }
+  }
+  // If someone returns from the hosted payment page (email link → /?paid=REF), verify silently.
+  (function(){ const m = location.search.match(/[?&]paid=([^&]+)/); if (m) verifyPayment(decodeURIComponent(m[1])); })();
 
   /* ---------- WhatsApp CTA prefill ---------- */
   (function(){
