@@ -147,7 +147,6 @@
       ['Sector', get('sector') || '—'],
       ['Active for', ({'3-6':'3–6 months','6-12':'6–12 months','1-2':'1–2 years','2plus':'2+ years'})[get('duration')] || '—'],
       ['JCI member', get('jci') === 'yes' ? 'Yes' : 'No'],
-      ['Participation', get('participation')],
       ['Pitch video', get('videolink') || '—'],
     ];
     $('#reviewList').innerHTML = rows.map(([k,v]) => `<dt>${k}</dt><dd>${escapeHtml(v)}</dd>`).join('');
