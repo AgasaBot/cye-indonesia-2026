@@ -191,14 +191,37 @@ function setPayment_(orderId, label, when) {
   const cO = head.indexOf('Order ID');
   const cS = head.indexOf('Payment status');
   const cP = head.indexOf('Paid at');
+  const cEmail = head.indexOf('Email');
+  const cName = head.indexOf('Full name');
+  const cAmt = head.indexOf('Amount (IDR)');
   for (var r = 1; r < values.length; r++) {
     if (cO >= 0 && String(values[r][cO]) === String(orderId)) {
+      const wasPaid = cS >= 0 && String(values[r][cS]) === 'Paid';
       if (cS >= 0) sheet.getRange(r + 1, cS + 1).setValue(label);
       if (cP >= 0 && label === 'Paid') sheet.getRange(r + 1, cP + 1).setValue(when || new Date().toISOString());
+      // Email the applicant the first time payment is confirmed (guard against
+      // duplicates if both the frontend check and the webhook fire).
+      if (label === 'Paid' && !wasPaid && cEmail >= 0 && values[r][cEmail]) {
+        sendPaymentReceived_(values[r][cEmail], cName >= 0 ? values[r][cName] : '', orderId, cAmt >= 0 ? values[r][cAmt] : '');
+      }
       return true;
     }
   }
   return false;
+}
+
+function sendPaymentReceived_(email, name, ref, amount) {
+  const amt = amount ? ('IDR ' + Number(amount).toLocaleString('en-US')) : 'your registration fee';
+  const subject = 'CYE Indonesia 2026 — payment received (' + (ref || '') + ')';
+  const body =
+    'Hi ' + (name || '') + ',\n\n' +
+    'We have received your registration fee payment of ' + amt + ' for the Creative Young ' +
+    'Entrepreneur Award — Indonesia 2026. Your spot is confirmed.\n' +
+    'Reference: ' + (ref || '') + '\n\n' +
+    'Our team will be in touch with the next steps. May the best candidate win!\n\n' +
+    'National Final: 3 October 2026 — APL Tower L22, Galilee Centre, Jakarta.\n\n' +
+    'JCI Nusantara · CYE Indonesia 2026';
+  MailApp.sendEmail(email, subject, body);
 }
 
 function sha512_(s) {
