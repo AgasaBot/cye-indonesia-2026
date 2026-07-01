@@ -221,6 +221,20 @@ h1,h2,h3,h4,.display{font-family:'Montserrat',sans-serif;font-weight:800;line-he
 .subcard p{color:var(--muted);font-size:15px}
 .subcard .kk{display:inline-block;margin-top:14px;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
 
+/* ---------- pitch video guide ---------- */
+.video-guide{margin-top:40px;background:var(--mist-2);border:1px solid var(--line);border-radius:var(--r);padding:clamp(24px,3vw,38px)}
+.video-guide .vg-head{text-align:center;max-width:640px;margin:0 auto 26px}
+.video-guide .vg-head h3{font-size:clamp(22px,2.6vw,30px);margin:6px 0 8px}
+.video-guide .vg-head h3 .teal{color:var(--teal-deep)}
+.video-guide .vg-head p{color:var(--muted);font-size:15px}
+.vg-steps{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.vg-step{background:#fff;border:1px solid var(--line);border-radius:14px;padding:20px}
+.vg-time{display:inline-block;font-family:'Montserrat',sans-serif;font-weight:900;font-size:14px;color:var(--navy);background:var(--teal);border-radius:999px;padding:4px 12px;margin-bottom:12px}
+.vg-step h4{font-size:16px;margin-bottom:6px}
+.vg-step p{font-size:13.5px;color:var(--muted);line-height:1.5}
+@media(max-width:820px){.vg-steps{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.vg-steps{grid-template-columns:1fr}}
+
 /* ---------- timeline ---------- */
 .timeline{position:relative;max-width:760px;margin:0 auto;padding-left:8px}
 .timeline::before{content:"";position:absolute;left:23px;top:8px;bottom:8px;width:3px;background:linear-gradient(var(--teal),var(--teal-light));border-radius:3px}
