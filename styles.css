@@ -277,6 +277,11 @@ h1,h2,h3,h4,.display{font-family:'Montserrat',sans-serif;font-weight:800;line-he
 .rung.r3 p{color:rgba(14,26,60,.8)}
 .rung.r3 .lvl{color:rgba(14,26,60,.12)}
 .rung .step-arrow{position:absolute;top:50%;right:-20px;color:var(--teal);z-index:5}
+.rung-prize{margin-top:14px;padding:11px 13px;border-radius:10px;background:rgba(114,217,191,.12);border:1px solid rgba(114,217,191,.3);font-size:13.5px;line-height:1.45;color:#dcebe6}
+.rung-prize .pl{display:block;font-size:10.5px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--teal);margin-bottom:3px}
+.rung-prize b{font-family:'Montserrat',sans-serif;font-weight:900;color:var(--teal)}
+.rung.r3 .rung-prize{background:rgba(10,15,41,.10);border-color:rgba(10,15,41,.2);color:rgba(14,26,60,.85)}
+.rung.r3 .rung-prize .pl,.rung.r3 .rung-prize b{color:var(--navy)}
 .ladder-note{text-align:center;color:var(--muted-light);font-size:14px;margin-top:46px}
 
 /* ---------- FAQ ---------- */
