@@ -390,6 +390,20 @@ h1,h2,h3,h4,.display{font-family:'Montserrat',sans-serif;font-weight:800;line-he
 .foot-col h5{font-family:'Montserrat',sans-serif;font-weight:800;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#fff;margin-bottom:18px}
 .foot-col a,.foot-col p{display:block;color:#90a2c4;font-size:14.5px;margin-bottom:11px;transition:color .2s}
 .foot-col a:hover{color:var(--teal)}
+/* FAQ — "how to join" callout */
+.faq-more{margin-top:26px;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;
+  background:var(--mist);border:1px solid var(--line);border-radius:16px;padding:22px 26px}
+.faq-more-text{display:flex;flex-direction:column;gap:3px;min-width:240px;flex:1}
+.faq-more-text b{font-family:'Montserrat',sans-serif;font-weight:800;font-size:16px;color:var(--navy)}
+.faq-more-text span{font-size:14px;color:var(--muted)}
+.faq-more-actions{display:flex;gap:10px;flex-wrap:wrap}
+.btn-dl{display:inline-flex;align-items:center;gap:7px;text-decoration:none;font-family:'Montserrat',sans-serif;
+  font-weight:800;font-size:14px;padding:11px 18px;border-radius:11px;background:var(--teal);color:var(--navy);
+  transition:filter .2s,transform .15s}
+.btn-dl:hover{filter:brightness(1.05)}
+.btn-dl:active{transform:translateY(1px)}
+@media(max-width:560px){.faq-more-actions{width:100%}.faq-more-actions .btn,.faq-more-actions .btn-dl{flex:1 1 auto;justify-content:center;text-align:center}}
+
 /* PARTNERS & SPONSORS — light band */
 .sponsors{background:var(--mist);padding:58px 0 62px;text-align:center}
 .sponsors-eyebrow{font-family:'Montserrat',sans-serif;font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--teal-deep);margin-bottom:8px}

@@ -73,6 +73,17 @@
   .btn.primary:hover{filter:brightness(1.05)}
   .btn.wa{background:var(--navy);color:#fff}
   .btn.wa:hover{background:var(--navy-2)}
+  .dl-pack{display:flex;align-items:center;gap:13px;margin-top:12px;text-decoration:none;
+    background:var(--mist-2);border:1px solid var(--line);border-radius:12px;padding:13px 16px;color:var(--navy);
+    transition:border-color .2s,background .2s,transform .15s}
+  .dl-pack:hover{border-color:var(--teal-deep);background:var(--mist)}
+  .dl-pack:active{transform:translateY(1px)}
+  .dl-ic{font-size:22px;line-height:1}
+  .dl-pack .dl-txt{display:flex;flex-direction:column;flex:1;min-width:0}
+  .dl-pack b{font-family:'Montserrat',sans-serif;font-weight:800;font-size:14.5px}
+  .dl-pack .dl-sub{font-size:12.5px;color:var(--muted)}
+  .dl-arrow{width:30px;height:30px;flex:none;border-radius:50%;background:var(--teal);color:var(--navy);
+    display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px}
   footer{padding:18px 26px 26px;text-align:center;font-size:12.5px;color:var(--muted)}
   footer a{color:var(--teal-deep);text-decoration:none;font-weight:600}
   @media print{body{background:#fff;padding:0}.card{box-shadow:none;max-width:none}}
@@ -140,6 +151,11 @@
         <a class="btn primary" href="https://cye-indonesia.com/#register">Register now →</a>
         <a class="btn wa" href="https://wa.me/6281905687888?text=Hello%2C%20I%27d%20like%20to%20know%20more%20about%20CYE%20Indonesia" target="_blank" rel="noopener">💬 Ask on WhatsApp</a>
       </div>
+      <a class="dl-pack" href="assets/CYE-Indonesia-2026-Guide.pdf" download>
+        <span class="dl-ic">📄</span>
+        <span class="dl-txt"><b>Download the full info pack</b><span class="dl-sub">PDF · program details, pathway &amp; 30 FAQs · 3.4&nbsp;MB</span></span>
+        <span class="dl-arrow">↓</span>
+      </a>
     </main>
 
     <footer>
