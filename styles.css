@@ -390,9 +390,19 @@ h1,h2,h3,h4,.display{font-family:'Montserrat',sans-serif;font-weight:800;line-he
 .foot-col h5{font-family:'Montserrat',sans-serif;font-weight:800;font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:#fff;margin-bottom:18px}
 .foot-col a,.foot-col p{display:block;color:#90a2c4;font-size:14.5px;margin-bottom:11px;transition:color .2s}
 .foot-col a:hover{color:var(--teal)}
-.partners{border-top:1px solid rgba(255,255,255,.1);border-bottom:1px solid rgba(255,255,255,.1);padding:28px 0;margin-bottom:28px;display:flex;align-items:center;gap:28px;flex-wrap:wrap}
-.partners .pl{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#5f7099;font-weight:600}
-.partner-slot{height:42px;min-width:120px;border:1px dashed rgba(255,255,255,.16);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#5f7099;font-size:12px;font-family:monospace}
+/* PARTNERS & SPONSORS — light band */
+.sponsors{background:var(--mist);padding:58px 0 62px;text-align:center}
+.sponsors-eyebrow{font-family:'Montserrat',sans-serif;font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--teal-deep);margin-bottom:8px}
+.sponsors-title{font-family:'Montserrat',sans-serif;font-weight:800;font-size:clamp(22px,3.4vw,30px);color:var(--navy);margin:0 0 34px;letter-spacing:-.01em}
+.logo-wall{display:flex;flex-wrap:wrap;justify-content:center;gap:18px;max-width:940px;margin:0 auto}
+.logo-card{background:#fff;border:1px solid var(--line);border-radius:14px;box-shadow:0 8px 22px -14px rgba(10,15,41,.28);height:98px;flex:1 1 200px;max-width:236px;display:flex;align-items:center;justify-content:center;padding:20px 26px;transition:transform .2s,box-shadow .2s}
+.logo-card:hover{transform:translateY(-4px);box-shadow:0 16px 34px -16px rgba(10,15,41,.4)}
+.logo-card img{max-height:54px;max-width:100%;width:auto;object-fit:contain}
+@media(max-width:640px){
+  .logo-wall{gap:12px}
+  .logo-card{height:82px;flex-basis:132px;max-width:none;padding:14px 16px}
+  .logo-card img{max-height:40px}
+}
 .foot-bottom{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap;color:#5f7099;font-size:13px}
 .foot-bottom a{color:#90a2c4}
 .foot-bottom a:hover{color:var(--teal)}
