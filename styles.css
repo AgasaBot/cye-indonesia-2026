@@ -309,6 +309,9 @@ h1,h2,h3,h4,.display{font-family:'Montserrat',sans-serif;font-weight:800;line-he
 .reg-fee{margin-top:34px;display:flex;align-items:center;gap:16px;background:rgba(255,255,255,.05);border:1px solid var(--line-light);border-radius:var(--r);padding:18px 22px}
 .reg-fee .amt{font-family:'Montserrat',sans-serif;font-weight:900;font-size:28px;color:var(--teal)}
 .reg-fee .lab{font-size:13px;color:#a9bbdb}
+.reg-pitch .reg-consent{margin-top:16px;font-size:12.5px;line-height:1.5;color:#8ea1c4;max-width:440px}
+.reg-pitch .reg-consent a{color:var(--teal-light);text-decoration:underline;text-underline-offset:2px}
+.reg-pitch .reg-consent a:hover{color:var(--teal)}
 .fee-badge{display:inline-block;vertical-align:middle;margin-left:6px;font-family:'Inter',sans-serif;font-weight:700;font-size:10px;letter-spacing:.05em;text-transform:uppercase;color:var(--navy);background:var(--teal);border-radius:999px;padding:3px 8px}
 
 .form-card{background:#fff;border-radius:var(--r-lg);box-shadow:0 40px 90px -30px rgba(0,0,0,.5);overflow:hidden}
