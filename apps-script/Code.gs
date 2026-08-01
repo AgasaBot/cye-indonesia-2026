@@ -50,9 +50,9 @@ function cfg_() {
 function appBase_() { return cfg_().isProd ? 'https://app.midtrans.com' : 'https://app.sandbox.midtrans.com'; }
 function apiBase_() { return cfg_().isProd ? 'https://api.midtrans.com' : 'https://api.sandbox.midtrans.com'; }
 
-// Early-bird IDR 200,000 before 1 Aug 2026 (WIB); IDR 300,000 from 1 Aug onwards.
+// Early-bird IDR 200,000 through 10 Aug 2026 (WIB); IDR 300,000 from 11 Aug onwards.
 function feeForToday_() {
-  const cutoff = Date.UTC(2026, 6, 31, 17, 0, 0); // 2026-08-01 00:00:00 +07:00
+  const cutoff = Date.UTC(2026, 7, 10, 17, 0, 0); // 2026-08-11 00:00:00 +07:00
   return (new Date().getTime() < cutoff) ? 200000 : 300000;
 }
 
@@ -256,7 +256,7 @@ function sendConfirmation_(d, payUrl, amount) {
     'Hi ' + (d.fullname || '') + ',\n\n' +
     'Thank you for registering for the Creative Young Entrepreneur Award — Indonesia 2026.\n' +
     'We have received your registration. Your reference number is ' + (d.ref || '') + '.\n\n' +
-    'Registration fee: ' + amt + ' (early-bird before 1 August 2026; IDR 300,000 afterwards).\n';
+    'Registration fee: ' + amt + ' (early-bird through 10 August 2026; IDR 300,000 afterwards).\n';
   if (payUrl) {
     body += 'You can pay online securely anytime here:\n' + payUrl + '\n\n';
   } else {
