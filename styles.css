@@ -407,6 +407,22 @@ h1,h2,h3,h4,.display{font-family:'Montserrat',sans-serif;font-weight:800;line-he
 .btn-dl:active{transform:translateY(1px)}
 @media(max-width:560px){.faq-more-actions{width:100%}.faq-more-actions .btn,.faq-more-actions .btn-dl{flex:1 1 auto;justify-content:center;text-align:center}}
 
+/* JUDGES */
+.judges-sec{background:var(--navy);position:relative;overflow:hidden}
+.judges-sec .section-head h2{color:#fff}
+.judges-sec .section-head p{color:#cfdaee}
+.judges-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:20px;margin-top:6px;position:relative;z-index:2}
+.judge-card{background:var(--navy-2);border:1px solid var(--line-light);border-radius:16px;overflow:hidden;transition:transform .2s,box-shadow .2s}
+.judge-card:hover{transform:translateY(-5px);box-shadow:0 22px 44px -22px rgba(0,0,0,.65)}
+.judge-photo{aspect-ratio:4/5;overflow:hidden;background:#123c39}
+.judge-photo img{width:100%;height:100%;object-fit:cover;object-position:top center;display:block}
+.judge-info{padding:15px 15px 18px}
+.judge-info h3{color:#fff;font-family:'Montserrat',sans-serif;font-weight:800;font-size:15.5px;margin:0 0 4px;line-height:1.2}
+.judge-role{color:#a9bbdb;font-size:12.5px;line-height:1.35;margin:0 0 11px;min-height:34px}
+.judge-tag{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--teal);background:rgba(114,217,191,.12);border:1px solid rgba(114,217,191,.32);border-radius:999px;padding:3px 10px}
+@media(max-width:1000px){.judges-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:640px){.judges-grid{grid-template-columns:repeat(2,1fr);gap:13px}.judge-info{padding:12px 12px 15px}.judge-role{min-height:0}}
+
 /* PARTNERS & SPONSORS — light band */
 .sponsors{background:var(--mist);padding:58px 0 62px;text-align:center}
 .sponsors-eyebrow{font-family:'Montserrat',sans-serif;font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--teal-deep);margin-bottom:8px}
