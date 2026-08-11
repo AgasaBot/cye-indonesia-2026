@@ -41,14 +41,34 @@
     });
   });
 
-  /* ---------- file upload labels ---------- */
+  /* ---------- file upload labels + size guard ----------
+     Files are sent inline (base64) in one request; an oversized upload makes the
+     submission slow/fragile and can fail with a generic "connection" error. Cap
+     the size, and if it's too big, clear it and tell the user (the deck also
+     accepts a Drive link instead). */
+  const MAX_FILE_MB = { plan: 20, headshot: 10 };
   $$('[data-upload]').forEach(label => {
     const input = $('input', label), lbl = $('[data-uplabel]', label);
     const original = lbl.textContent;
+    const field = input.closest('.field');
+    const errEl = field ? $('[data-upmsg]', field) : null;
     input.addEventListener('change', () => {
+      const f = input.files && input.files[0];
+      const capMB = MAX_FILE_MB[input.name];
+      if (f && capMB && f.size > capMB * 1024 * 1024){
+        input.value = '';                         // drop it so it can't fail the submit
+        label.classList.remove('filled'); lbl.textContent = original;
+        if (errEl){
+          errEl.textContent = 'That file is ' + (f.size / 1048576).toFixed(1) + ' MB — the limit is ' + capMB +
+            ' MB. Please compress it' + (input.name === 'plan' ? ' or paste a Drive link above instead.' : '.');
+          errEl.style.display = 'block';
+        }
+        return;
+      }
+      if (errEl) errEl.style.display = 'none';
       if (input.files && input.files.length){
         label.classList.add('filled');
-        lbl.textContent = input.files[0].name.length > 28 ? input.files[0].name.slice(0,26)+'…' : input.files[0].name;
+        lbl.textContent = f.name.length > 28 ? f.name.slice(0,26)+'…' : f.name;
       } else {
         label.classList.remove('filled'); lbl.textContent = original;
       }
@@ -192,8 +212,16 @@
     }
     // text/plain body keeps this a "simple" request (no CORS preflight); Apps Script
     // reads it from e.postData.contents and returns JSON (it sends Access-Control-Allow-Origin: *).
-    const res = await fetch(ENDPOINT, { method:'POST', body: JSON.stringify(payload) });
-    try { return await res.json(); } catch(e){ return {}; }
+    // Guard against a genuinely stuck request hanging "Submitting…" forever — 90s is
+    // well beyond a normal submission (a few seconds), so it only trips on real hangs.
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 90000);
+    try {
+      const res = await fetch(ENDPOINT, { method:'POST', body: JSON.stringify(payload), signal: controller.signal });
+      try { return await res.json(); } catch(e){ return {}; }
+    } finally {
+      clearTimeout(timer);
+    }
   }
 
   let submitting = false;
