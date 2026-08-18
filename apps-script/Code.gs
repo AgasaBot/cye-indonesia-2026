@@ -56,11 +56,64 @@ function feeForToday_() {
   return (new Date().getTime() < cutoff) ? 200000 : 300000;
 }
 
+// Admin-only: add a participant who registered & paid OFFLINE, straight in as Paid.
+// Guarded by a shared passcode stored in Script Properties (ADMIN_PASSCODE) so the
+// public /exec endpoint can't be used to inject fake paid rows.
+function handleManualEntry_(data) {
+  const pass = PropertiesService.getScriptProperties().getProperty('ADMIN_PASSCODE') || '';
+  if (!pass) return json_({ ok: false, error: 'Server not set up: ADMIN_PASSCODE is missing.' });
+  if (String(data.passcode || '') !== pass) return json_({ ok: false, error: 'Wrong passcode.' });
+  if (!data.fullname || !data.email) return json_({ ok: false, error: 'Name and email are required.' });
+
+  const durations = { 'under': '<3 months', '3-6': '3–6 months', '6-12': '6–12 months', '1-2': '1–2 years', '2plus': '2+ years' };
+  const ref = 'CYE-2026-M' + Math.floor(10000 + Math.random() * 90000);
+  const amount = Number(data.amount) > 0 ? Math.round(Number(data.amount)) : 200000;
+  const paidAt = data.paidAt || new Date().toISOString().slice(0, 10);
+  const paidNote = 'Manual — ' + paidAt + (data.note ? (' · ' + data.note) : '');
+
+  const sheet = getSheet_();
+  const row = [
+    new Date().toISOString(),
+    ref,
+    data.fullname || '', data.email || '', data.phone || '', data.age || '', data.city || '',
+    data.business || '', data.sector || '', durations[data.duration] || data.duration || '',
+    data.jci === 'yes' ? 'Yes' : 'No', data.participation || '',
+    data.videolink || '', data.planlink || '',
+    '', '',                 // deck file / headshot file — not collected on manual entry
+    'Paid', amount, ref, paidNote
+  ];
+  // Write as plain text so values like phone "+62..." aren't parsed as formulas.
+  const target = sheet.getRange(sheet.getLastRow() + 1, 1, 1, row.length);
+  target.setNumberFormat('@');
+  target.setValues([row]);
+
+  // Confirm to the participant that their (already-paid) spot is secured.
+  if (data.email) { try { sendPaymentReceived_(data.email, data.fullname || '', ref, amount); } catch (e) {} }
+  // Copy the organizer inbox, flagged as a manual entry.
+  if (NOTIFY_EMAIL) {
+    try {
+      MailApp.sendEmail(NOTIFY_EMAIL,
+        'Manual CYE 2026 entry (PAID): ' + (data.fullname || '') + ' (' + ref + ')',
+        ['Added manually as PAID (registered/paid offline).',
+         'Ref: ' + ref, 'Name: ' + (data.fullname || ''), 'Email: ' + (data.email || ''),
+         'Phone: ' + (data.phone || ''), 'Business: ' + (data.business || ''),
+         'Amount: IDR ' + Number(amount).toLocaleString('en-US'), 'Paid: ' + paidNote].join('\n'));
+    } catch (e) {}
+  }
+
+  return json_({ ok: true, ref: ref, amount: amount });
+}
+
 function doPost(e) {
   const lock = LockService.getScriptLock();
   lock.waitLock(30000); // avoid two submissions clobbering the same row
   try {
     const data = JSON.parse(e.postData.contents);
+
+    // (0) Admin: manually add an already-paid participant (registered offline).
+    if (data.action === 'manualEntry') {
+      return handleManualEntry_(data);
+    }
 
     // (1) Midtrans server-to-server payment notification (webhook)
     if (data.transaction_status && data.signature_key) {

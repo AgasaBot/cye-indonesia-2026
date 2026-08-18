@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Manual entry — CYE Indonesia 2026 (Admin)</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0a0f29">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0a0f29; --navy-2:#121a3f; --teal:#72d9bf; --teal-deep:#159a78;
+    --teal-light:#a9e7d4; --mist:#e7f6f1; --mist-2:#f2fbf8; --white:#fefefe;
+    --muted:#5d6b88; --line:rgba(14,26,60,.12); --err:#d23a57;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--navy);color:var(--navy);
+    line-height:1.5;-webkit-font-smoothing:antialiased;padding:20px 14px}
+  .card{max-width:640px;margin:0 auto;background:var(--white);border-radius:20px;overflow:hidden;
+    box-shadow:0 24px 60px -20px rgba(0,0,0,.55)}
+  .hd{background:var(--navy);color:#fff;padding:24px 26px}
+  .hd .kicker{font-size:11.5px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--teal)}
+  .hd h1{font-family:'Montserrat',sans-serif;font-weight:800;font-size:22px;margin:5px 0 6px}
+  .hd p{font-size:13.5px;color:#c9d5ec}
+  form{padding:22px 26px 8px}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  .field{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+  .field.full{grid-column:1 / -1}
+  label{font-size:12.5px;font-weight:600;color:var(--navy)}
+  label .req{color:var(--teal-deep)}
+  .hint{font-size:12px;color:var(--muted);font-weight:400}
+  input,select{font-family:inherit;font-size:14.5px;color:var(--navy);background:#fff;
+    border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;transition:border-color .15s}
+  input:focus,select:focus{outline:none;border-color:var(--teal-deep)}
+  .field.err input,.field.err select{border-color:var(--err)}
+  .radio-row{display:flex;gap:10px}
+  .radio-row label{flex:1;display:flex;align-items:center;gap:8px;font-weight:500;font-size:14px;
+    border:1.5px solid var(--line);border-radius:10px;padding:9px 12px;cursor:pointer}
+  .radio-row input{width:auto}
+  .divider{border:none;border-top:1px solid var(--line);margin:6px 0 18px}
+  .sect{grid-column:1 / -1;font-family:'Montserrat',sans-serif;font-weight:800;font-size:12px;
+    letter-spacing:.08em;text-transform:uppercase;color:var(--teal-deep);margin:4px 0 -4px}
+  .actions{padding:6px 0 4px}
+  .btn{width:100%;font-family:'Montserrat',sans-serif;font-weight:800;font-size:15.5px;
+    background:var(--teal);color:var(--navy);border:none;border-radius:12px;padding:14px;cursor:pointer;
+    transition:filter .15s,transform .1s}
+  .btn:hover{filter:brightness(1.05)}
+  .btn:active{transform:translateY(1px)}
+  .btn:disabled{opacity:.6;cursor:default}
+  .msg{border-radius:10px;padding:12px 14px;font-size:13.5px;font-weight:500;margin:2px 0 14px;display:none}
+  .msg.ok{display:block;background:var(--mist);color:#0d5c43;border:1px solid var(--teal)}
+  .msg.bad{display:block;background:#fdeef1;color:var(--err);border:1px solid #f2b8c4}
+  .foot{padding:14px 26px 22px;font-size:12px;color:var(--muted);text-align:center}
+  @media(max-width:520px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+  <div class="card">
+    <header class="hd">
+      <div class="kicker">CYE Indonesia 2026 · Admin</div>
+      <h1>Add a manually-paid participant</h1>
+      <p>For people who registered &amp; paid offline. This adds them to the registrations sheet marked <b style="color:#fff">Paid</b> and emails them a confirmation. Not a public page.</p>
+    </header>
+
+    <form id="mform" novalidate>
+      <div id="result" class="msg"></div>
+
+      <div class="field full">
+        <label>Admin passcode <span class="req">*</span> <span class="hint">— required to submit</span></label>
+        <input type="password" name="passcode" autocomplete="off" placeholder="Enter the admin passcode">
+      </div>
+      <hr class="divider">
+
+      <div class="grid">
+        <div class="sect">Participant</div>
+        <div class="field full"><label>Full name <span class="req">*</span></label><input name="fullname" placeholder="e.g. Wilson Fauster"></div>
+        <div class="field"><label>Email <span class="req">*</span></label><input type="email" name="email" placeholder="name@email.com"></div>
+        <div class="field"><label>WhatsApp / phone <span class="req">*</span></label><input name="phone" placeholder="+62 8xx xxxx xxxx"></div>
+        <div class="field"><label>Age</label><input type="number" name="age" min="17" max="60" placeholder="18–40"></div>
+        <div class="field"><label>City / domicile</label><input name="city" placeholder="e.g. Jakarta"></div>
+
+        <div class="sect">Business</div>
+        <div class="field full"><label>Business name <span class="req">*</span></label><input name="business" placeholder="e.g. MeetFluencer"></div>
+        <div class="field"><label>Sector</label>
+          <select name="sector">
+            <option value="">Select a sector…</option>
+            <option>Food &amp; Beverage</option><option>Retail &amp; E-commerce</option><option>Technology / SaaS</option>
+            <option>Creative &amp; Media</option><option>Fashion &amp; Beauty</option><option>Health &amp; Wellness</option>
+            <option>Education</option><option>Agriculture</option><option>Services</option><option>Other</option>
+          </select>
+        </div>
+        <div class="field"><label>Business active for</label>
+          <select name="duration">
+            <option value="">Select…</option>
+            <option value="under">Less than 3 months</option>
+            <option value="3-6">3–6 months</option>
+            <option value="6-12">6–12 months</option>
+            <option value="1-2">1–2 years</option>
+            <option value="2plus">More than 2 years</option>
+          </select>
+        </div>
+        <div class="field full"><label>Pitch video link <span class="hint">— optional</span></label><input type="url" name="videolink" placeholder="Google Drive / YouTube link"></div>
+        <div class="field full"><label>Business intro deck link <span class="hint">— optional</span></label><input type="url" name="planlink" placeholder="Google Drive link"></div>
+
+        <div class="sect">Payment</div>
+        <div class="field"><label>Amount paid <span class="req">*</span></label>
+          <select name="amountSel" id="amountSel">
+            <option value="200000">IDR 200,000 (early-bird)</option>
+            <option value="300000">IDR 300,000 (standard)</option>
+            <option value="custom">Other amount…</option>
+          </select>
+        </div>
+        <div class="field" id="customWrap" style="display:none"><label>Custom amount (IDR)</label><input type="number" name="amountCustom" min="0" step="1000" placeholder="e.g. 150000"></div>
+        <div class="field"><label>Payment date <span class="req">*</span></label><input type="date" name="paidAt"></div>
+        <div class="field full"><label>Note / receipt no. <span class="hint">— optional</span></label><input name="note" placeholder="e.g. paid via bank transfer, ref 0012"></div>
+      </div>
+
+      <div class="actions">
+        <button type="submit" class="btn" id="submitBtn">Add participant as Paid →</button>
+      </div>
+    </form>
+    <div class="foot">Entries land in the same Registrations sheet. Refresh to add another.</div>
+  </div>
+
+<script>
+(function(){
+  var ENDPOINT = 'https://script.google.com/macros/s/AKfycbwY5zaPSyDHNjbjvBsBUbMrjWd_mMPWyywfEFBIFtsgkmodhG8D9gxC9dGezsCf6iwN/exec';
+  var $ = function(s){ return document.querySelector(s); };
+  var form = $('#mform'), result = $('#result'), btn = $('#submitBtn');
+
+  // default payment date = today
+  form.paidAt.value = new Date().toISOString().slice(0,10);
+  // remember passcode locally so it isn't retyped every time
+  try { var saved = localStorage.getItem('cye_admin_pass'); if (saved) form.passcode.value = saved; } catch(e){}
+
+  var amountSel = $('#amountSel'), customWrap = $('#customWrap');
+  amountSel.addEventListener('change', function(){
+    customWrap.style.display = amountSel.value === 'custom' ? '' : 'none';
+  });
+
+  function markErr(name, bad){
+    var el = form[name]; if (!el) return;
+    el.closest('.field').classList.toggle('err', !!bad);
+  }
+  function show(kind, text){ result.className = 'msg ' + kind; result.textContent = text; result.scrollIntoView({block:'nearest'}); }
+
+  form.addEventListener('submit', async function(e){
+    e.preventDefault();
+    result.className = 'msg';
+    ['passcode','fullname','email','phone','business'].forEach(function(n){ markErr(n, false); });
+
+    var amount = amountSel.value === 'custom' ? Number(form.amountCustom.value) : Number(amountSel.value);
+    var required = { passcode: form.passcode.value, fullname: form.fullname.value, email: form.email.value, phone: form.phone.value, business: form.business.value };
+    var missing = false;
+    Object.keys(required).forEach(function(n){ if (!String(required[n]).trim()){ markErr(n, true); missing = true; } });
+    if (form.email.value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.value)){ markErr('email', true); missing = true; }
+    if (!amount || amount <= 0){ markErr('amountCustom', true); missing = true; }
+    if (missing){ show('bad', 'Please fill in the required fields (passcode, name, email, phone, business, and a valid amount).'); return; }
+
+    var payload = {
+      action: 'manualEntry',
+      passcode: form.passcode.value.trim(),
+      fullname: form.fullname.value.trim(), email: form.email.value.trim(), phone: form.phone.value.trim(),
+      age: form.age.value.trim(), city: form.city.value.trim(),
+      business: form.business.value.trim(), sector: form.sector.value, duration: form.duration.value,
+      videolink: form.videolink.value.trim(), planlink: form.planlink.value.trim(),
+      amount: amount, paidAt: form.paidAt.value, note: form.note.value.trim()
+    };
+
+    btn.disabled = true; var label = btn.textContent; btn.textContent = 'Adding…';
+    try {
+      var res = await fetch(ENDPOINT, { method:'POST', body: JSON.stringify(payload) });
+      var data = {}; try { data = await res.json(); } catch(e){}
+      if (data && data.ok){
+        try { localStorage.setItem('cye_admin_pass', payload.passcode); } catch(e){}
+        show('ok', '✓ Added ' + payload.fullname + ' as Paid (IDR ' + Number(amount).toLocaleString('en-US') + '). Ref: ' + data.ref + '. A confirmation email was sent to ' + payload.email + '.');
+        // reset participant fields for the next entry, keep passcode + date
+        ['fullname','email','phone','age','city','business','videolink','planlink','note'].forEach(function(n){ form[n].value=''; });
+        form.sector.value=''; form.duration.value=''; amountSel.value='200000'; customWrap.style.display='none';
+      } else {
+        show('bad', '✗ ' + ((data && data.error) || 'Something went wrong. Check the passcode and your connection, then try again.'));
+      }
+    } catch(err){
+      show('bad', '✗ Could not reach the server. Check your connection and try again.');
+    } finally {
+      btn.disabled = false; btn.textContent = label;
+    }
+  });
+})();
+</script>
+</body>
+</html>
