@@ -30,24 +30,28 @@
   label{font-size:12.5px;font-weight:600;color:var(--navy)}
   label .req{color:var(--teal-deep)}
   .hint{font-size:12px;color:var(--muted);font-weight:400}
-  input{font-family:inherit;font-size:14.5px;color:var(--navy);background:#fff;
+  input,select{font-family:inherit;font-size:14.5px;color:var(--navy);background:#fff;
     border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;transition:border-color .15s}
-  input:focus{outline:none;border-color:var(--teal-deep)}
+  input:focus,select:focus{outline:none;border-color:var(--teal-deep)}
   input[type=file]{padding:9px 12px;font-size:13px}
-  .field.err input{border-color:var(--err)}
+  select:disabled{background:#f4f6fa;color:var(--muted)}
+  .field.err input,.field.err select{border-color:var(--err)}
   .divider{border:none;border-top:1px solid var(--line);margin:6px 0 18px}
   .sect{font-family:'Montserrat',sans-serif;font-weight:800;font-size:12px;
     letter-spacing:.08em;text-transform:uppercase;color:var(--teal-deep);margin:4px 0 10px}
-  .actions{padding:6px 0 4px}
   .btn{width:100%;font-family:'Montserrat',sans-serif;font-weight:800;font-size:15.5px;
     background:var(--teal);color:var(--navy);border:none;border-radius:12px;padding:14px;cursor:pointer;
     transition:filter .15s,transform .1s}
   .btn:hover{filter:brightness(1.05)}
   .btn:active{transform:translateY(1px)}
   .btn:disabled{opacity:.6;cursor:default}
+  .btn.ghost{background:#fff;color:var(--teal-deep);box-shadow:inset 0 0 0 1.5px var(--teal-deep);font-size:14px;padding:11px}
+  .btn.ghost:hover{background:var(--mist-2);filter:none}
+  .actions{padding:6px 0 4px}
   .msg{border-radius:10px;padding:12px 14px;font-size:13.5px;font-weight:500;margin:2px 0 14px;display:none}
   .msg.ok{display:block;background:var(--mist);color:#0d5c43;border:1px solid var(--teal)}
   .msg.bad{display:block;background:#fdeef1;color:var(--err);border:1px solid #f2b8c4}
+  .msg.info{display:block;background:var(--mist-2);color:#0d5c43;border:1px solid var(--teal-light)}
   .foot{padding:14px 26px 22px;font-size:12px;color:var(--muted);text-align:center}
   .foot a{color:var(--teal-deep);font-weight:600;text-decoration:none}
 </style>
@@ -57,23 +61,28 @@
     <header class="hd">
       <div class="kicker">CYE Indonesia 2026 · Admin</div>
       <h1>Attach submission files</h1>
-      <p>For participants who already registered &amp; paid but haven't sent their materials. Find them by Ref or email, then add their deck, video link and headshot — it saves straight onto their existing row. Not a public page.</p>
+      <p>For participants who registered &amp; paid but haven't sent their materials. Pick them from the list of who's still pending, then add their deck, video link and headshot — it saves onto their existing row. Names are masked. Not a public page.</p>
     </header>
 
     <form id="fform" novalidate>
       <div id="result" class="msg"></div>
 
       <div class="field">
-        <label>Admin passcode <span class="req">*</span> <span class="hint">— required to submit</span></label>
+        <label>Admin passcode <span class="req">*</span> <span class="hint">— required</span></label>
         <input type="password" name="passcode" autocomplete="off" placeholder="Enter the admin passcode">
+      </div>
+      <div class="field">
+        <button type="button" class="btn ghost" id="loadBtn">Load participants who still owe files</button>
       </div>
       <hr class="divider">
 
-      <div class="sect">Find the participant</div>
+      <div class="sect">Who needs files?</div>
       <div class="field">
-        <label>Participant Ref or email <span class="req">*</span></label>
-        <input name="lookup" placeholder="CYE-2026-… (column B in the sheet) or their email">
-        <span class="hint">Use the exact Ref if you have it — email works too, unless two people share it.</span>
+        <label>Pending participant <span class="req">*</span></label>
+        <select name="pick" id="pick" disabled>
+          <option value="">Enter the passcode and load the list ↑</option>
+        </select>
+        <span class="hint">Only people missing something. Names are partly masked — the business &amp; city help you pick the right one.</span>
       </div>
       <hr class="divider">
 
@@ -99,7 +108,7 @@
         <button type="submit" class="btn" id="submitBtn">Save files to their registration →</button>
       </div>
     </form>
-    <div class="foot">Saves onto the existing Registrations row. Refresh to do another. · <a href="/admin">Add a new manual entry →</a></div>
+    <div class="foot">Saves onto the existing Registrations row. · <a href="/admin">Add a new manual entry →</a></div>
   </div>
 
 <script>
@@ -107,9 +116,8 @@
   var ENDPOINT = 'https://script.google.com/macros/s/AKfycbwY5zaPSyDHNjbjvBsBUbMrjWd_mMPWyywfEFBIFtsgkmodhG8D9gxC9dGezsCf6iwN/exec';
   var MAX_FILE_MB = { plan: 20, headshot: 10 };
   var $ = function(s){ return document.querySelector(s); };
-  var form = $('#fform'), result = $('#result'), btn = $('#submitBtn');
+  var form = $('#fform'), result = $('#result'), btn = $('#submitBtn'), loadBtn = $('#loadBtn'), pick = $('#pick');
 
-  // reuse the same admin passcode remembered by /admin
   try { var saved = localStorage.getItem('cye_admin_pass'); if (saved) form.passcode.value = saved; } catch(e){}
 
   function markErr(name, bad){ var el = form[name]; if (el) el.closest('.field').classList.toggle('err', !!bad); }
@@ -124,13 +132,59 @@
     });
   }
 
+  function post(payload){ return fetch(ENDPOINT, { method:'POST', body: JSON.stringify(payload) }).then(function(r){ return r.json(); }); }
+
+  // ---- load the pending list into the dropdown ----
+  async function loadList(silent){
+    var passcode = form.passcode.value.trim();
+    markErr('passcode', false);
+    if (!passcode){ if (!silent){ markErr('passcode', true); show('bad', 'Enter the admin passcode first, then load the list.'); } return; }
+    loadBtn.disabled = true; var lbl = loadBtn.textContent; loadBtn.textContent = 'Loading…';
+    try {
+      var data = await post({ action:'pendingList', passcode:passcode });
+      if (data && data.ok){
+        try { localStorage.setItem('cye_admin_pass', passcode); } catch(e){}
+        pick.innerHTML = '';
+        if (!data.pending || !data.pending.length){
+          pick.innerHTML = '<option value="">🎉 Everyone has submitted — nothing pending</option>';
+          pick.disabled = true;
+          show('info', 'Nice — no one is missing files right now.');
+        } else {
+          var ph = document.createElement('option'); ph.value=''; ph.textContent='Select a participant… ('+data.pending.length+' pending)';
+          pick.appendChild(ph);
+          data.pending.forEach(function(p){
+            var o = document.createElement('option');
+            o.value = p.ref;
+            var where = [p.business, p.city].filter(Boolean).join(', ');
+            o.textContent = p.name + (where ? ' · ' + where : '') + ' — needs ' + (p.missing||[]).join(', ');
+            pick.appendChild(o);
+          });
+          pick.disabled = false;
+          if (!silent) show('info', data.pending.length + ' participant(s) still owe files. Pick one below.');
+        }
+      } else {
+        pick.disabled = true;
+        if (!silent) show('bad', '✗ ' + ((data && data.error) || 'Could not load the list. Check the passcode and try again.'));
+      }
+    } catch(err){
+      pick.disabled = true;
+      if (!silent) show('bad', '✗ Could not reach the server. Check your connection and try again.');
+    } finally {
+      loadBtn.disabled = false; loadBtn.textContent = lbl;
+    }
+  }
+  loadBtn.addEventListener('click', function(){ loadList(false); });
+  // auto-load if a passcode is already remembered on this device
+  if (form.passcode.value.trim()) loadList(true);
+
+  // ---- attach the files to the picked participant ----
   form.addEventListener('submit', async function(e){
     e.preventDefault();
     result.className = 'msg';
-    ['passcode','lookup'].forEach(function(n){ markErr(n, false); });
+    ['passcode','pick'].forEach(function(n){ markErr(n, false); });
 
     var passcode = form.passcode.value.trim();
-    var lookup = form.lookup.value.trim();
+    var ref = pick.value;
     var videolink = form.videolink.value.trim();
     var planlink = form.planlink.value.trim();
     var deck = form.plan.files[0] || null;
@@ -138,11 +192,10 @@
 
     var missing = false;
     if (!passcode){ markErr('passcode', true); missing = true; }
-    if (!lookup){ markErr('lookup', true); missing = true; }
-    if (missing){ show('bad', 'Enter the admin passcode and the participant Ref or email.'); return; }
+    if (!ref){ markErr('pick', true); missing = true; }
+    if (missing){ show('bad', 'Enter the passcode and pick a participant from the list.'); return; }
     if (!deck && !head && !videolink && !planlink){ show('bad', 'Add at least one thing to save — a deck, a deck link, a video link, or a headshot.'); return; }
 
-    // size guards (a big upload on a weak connection is the usual failure)
     var tooBig = null;
     if (deck && deck.size > MAX_FILE_MB.plan * 1048576) tooBig = 'The deck is over ' + MAX_FILE_MB.plan + ' MB — compress it or paste a Drive link instead.';
     if (head && head.size > MAX_FILE_MB.headshot * 1048576) tooBig = 'The headshot is over ' + MAX_FILE_MB.headshot + ' MB — please use a smaller image.';
@@ -154,14 +207,12 @@
       if (deck) files.push({ field:'plan', name:deck.name, type:deck.type, dataBase64: await readFileAsBase64(deck) });
       if (head) files.push({ field:'headshot', name:head.name, type:head.type, dataBase64: await readFileAsBase64(head) });
 
-      var payload = { action:'manualFiles', passcode:passcode, lookup:lookup, videolink:videolink, planlink:planlink, files:files };
-      var res = await fetch(ENDPOINT, { method:'POST', body: JSON.stringify(payload) });
-      var data = {}; try { data = await res.json(); } catch(e){}
+      var data = await post({ action:'manualFiles', passcode:passcode, lookup:ref, videolink:videolink, planlink:planlink, files:files });
       if (data && data.ok){
-        try { localStorage.setItem('cye_admin_pass', passcode); } catch(e){}
         show('ok', '✓ Saved ' + (data.updated ? data.updated.join(', ') : 'files') + ' to ' + (data.name || 'the participant') + ' (' + data.ref + ').');
-        ['lookup','videolink','planlink'].forEach(function(n){ form[n].value=''; });
+        ['videolink','planlink'].forEach(function(n){ form[n].value=''; });
         form.plan.value=''; form.headshot.value='';
+        loadList(true); // refresh the pending list (they may now be complete)
       } else {
         show('bad', '✗ ' + ((data && data.error) || 'Something went wrong. Check the passcode and your connection, then try again.'));
       }

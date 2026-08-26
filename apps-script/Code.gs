@@ -178,6 +178,59 @@ function handleManualFiles_(data) {
   return json_({ ok: true, ref: ref, name: name, updated: updated });
 }
 
+// Admin-only: masked list of registrations still missing submission materials
+// (video / deck / headshot). Names are masked so this can't leak a clean PII list;
+// business + city stay clear so the admin can still tell people apart.
+function handlePendingList_(data) {
+  const pass = PropertiesService.getScriptProperties().getProperty('ADMIN_PASSCODE') || '';
+  if (!pass) return json_({ ok: false, error: 'Server not set up: ADMIN_PASSCODE is missing.' });
+  if (String(data.passcode || '') !== pass) return json_({ ok: false, error: 'Wrong passcode.' });
+
+  const sheet = getSheet_();
+  const values = sheet.getDataRange().getValues();
+  const head = values[0];
+  const cRef = head.indexOf('Ref');
+  const cName = head.indexOf('Full name');
+  const cBiz = head.indexOf('Business');
+  const cCity = head.indexOf('City');
+  const cVideo = head.indexOf('Pitch video link');
+  const cDeckLink = head.indexOf('Business intro deck link');
+  const cDeckFile = head.indexOf('Business intro deck file');
+  const cHeadshot = head.indexOf('Headshot file');
+
+  const has = function (row, c) { return c >= 0 && String(row[c] || '').trim() !== ''; };
+  const pending = [];
+  for (var i = 1; i < values.length; i++) {
+    const row = values[i];
+    const ref = String(row[cRef] || '').trim();
+    if (!ref) continue;
+    const missing = [];
+    if (!has(row, cVideo)) missing.push('video');
+    if (!(has(row, cDeckFile) || has(row, cDeckLink))) missing.push('deck');
+    if (!has(row, cHeadshot)) missing.push('headshot');
+    if (!missing.length) continue;
+    pending.push({
+      ref: ref,
+      name: maskName_(cName >= 0 ? row[cName] : ''),
+      business: cBiz >= 0 ? String(row[cBiz] || '') : '',
+      city: cCity >= 0 ? String(row[cCity] || '') : '',
+      missing: missing
+    });
+  }
+  return json_({ ok: true, count: pending.length, pending: pending });
+}
+
+// "Wilson Fauster" -> "W••••n F•••••r": recognisable if you know the name, obscured otherwise.
+function maskName_(s) {
+  s = String(s || '').trim();
+  if (!s) return '—';
+  return s.split(/\s+/).map(function (w) {
+    if (w.length <= 1) return w;
+    if (w.length === 2) return w.charAt(0) + '•';
+    return w.charAt(0) + Array(w.length - 1).join('•') + w.charAt(w.length - 1);
+  }).join(' ');
+}
+
 function doPost(e) {
   const lock = LockService.getScriptLock();
   lock.waitLock(30000); // avoid two submissions clobbering the same row
@@ -192,6 +245,11 @@ function doPost(e) {
     // (0b) Admin: attach submission files/links to an EXISTING registration row.
     if (data.action === 'manualFiles') {
       return handleManualFiles_(data);
+    }
+
+    // (0c) Admin: masked list of participants who still owe submission files.
+    if (data.action === 'pendingList') {
+      return handlePendingList_(data);
     }
 
     // (1) Midtrans server-to-server payment notification (webhook)
