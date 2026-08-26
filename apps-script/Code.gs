@@ -104,6 +104,80 @@ function handleManualEntry_(data) {
   return json_({ ok: true, ref: ref, amount: amount });
 }
 
+// Admin-only: attach submission files (deck, video link, headshot) to an EXISTING
+// registration — for participants who registered/paid but haven't submitted yet.
+// Finds the row by Ref (preferred) or Email, uploads any files to Drive, and writes
+// the URLs/links into that row's submission columns (only the fields provided).
+function handleManualFiles_(data) {
+  const pass = PropertiesService.getScriptProperties().getProperty('ADMIN_PASSCODE') || '';
+  if (!pass) return json_({ ok: false, error: 'Server not set up: ADMIN_PASSCODE is missing.' });
+  if (String(data.passcode || '') !== pass) return json_({ ok: false, error: 'Wrong passcode.' });
+
+  const lookup = String(data.lookup || '').trim();
+  if (!lookup) return json_({ ok: false, error: 'Enter the participant Ref or email to find them.' });
+
+  const sheet = getSheet_();
+  const values = sheet.getDataRange().getValues();
+  const head = values[0];
+  const cRef = head.indexOf('Ref');
+  const cEmail = head.indexOf('Email');
+  const cName = head.indexOf('Full name');
+  const cVideo = head.indexOf('Pitch video link');
+  const cDeckLink = head.indexOf('Business intro deck link');
+  const cDeckFile = head.indexOf('Business intro deck file');
+  const cHeadshot = head.indexOf('Headshot file');
+
+  const byRef = /^CYE-/i.test(lookup);
+  const want = lookup.toLowerCase();
+  const rows = [];
+  for (var i = 1; i < values.length; i++) {
+    const col = byRef ? cRef : cEmail;
+    if (col >= 0 && String(values[i][col] || '').trim().toLowerCase() === want) rows.push(i);
+  }
+  if (rows.length === 0) return json_({ ok: false, error: 'No registration found for "' + lookup + '".' });
+  if (rows.length > 1) return json_({ ok: false, error: 'More than one row matches that email — use the exact Ref (column B) instead.' });
+
+  const r = rows[0];
+  const ref = String(values[r][cRef] || ('row' + (r + 1)));
+
+  // Save any uploaded files to the participant's Drive folder.
+  const fileUrls = {};
+  const files = data.files || [];
+  if (files.length) {
+    const folder = getUploadFolder_(ref);
+    files.forEach(function (f) {
+      if (!f || !f.dataBase64) return;
+      const blob = Utilities.newBlob(Utilities.base64Decode(f.dataBase64), f.type || 'application/octet-stream', f.name || f.field);
+      fileUrls[f.field] = folder.createFile(blob).getUrl();
+    });
+  }
+
+  const updated = [];
+  function setCell(col, val, labelText) {
+    if (col >= 0 && val) { sheet.getRange(r + 1, col + 1).setValue(val); updated.push(labelText); }
+  }
+  setCell(cVideo, String(data.videolink || '').trim(), 'pitch video');
+  setCell(cDeckLink, String(data.planlink || '').trim(), 'deck link');
+  setCell(cDeckFile, fileUrls.plan || '', 'deck file');
+  setCell(cHeadshot, fileUrls.headshot || '', 'headshot');
+
+  if (!updated.length) return json_({ ok: false, error: 'Nothing to save — add a file or link first.' });
+
+  const name = cName >= 0 ? String(values[r][cName] || '') : '';
+  if (NOTIFY_EMAIL) {
+    try {
+      MailApp.sendEmail(NOTIFY_EMAIL,
+        'CYE 2026 files attached: ' + name + ' (' + ref + ')',
+        ['Submission materials added to an existing registration.',
+         'Ref: ' + ref, 'Name: ' + name, 'Updated: ' + updated.join(', '),
+         'Video: ' + (data.videolink || '—'), 'Deck link: ' + (data.planlink || '—'),
+         'Deck file: ' + (fileUrls.plan || '—'), 'Headshot: ' + (fileUrls.headshot || '—')].join('\n'));
+    } catch (e) {}
+  }
+
+  return json_({ ok: true, ref: ref, name: name, updated: updated });
+}
+
 function doPost(e) {
   const lock = LockService.getScriptLock();
   lock.waitLock(30000); // avoid two submissions clobbering the same row
@@ -113,6 +187,11 @@ function doPost(e) {
     // (0) Admin: manually add an already-paid participant (registered offline).
     if (data.action === 'manualEntry') {
       return handleManualEntry_(data);
+    }
+
+    // (0b) Admin: attach submission files/links to an EXISTING registration row.
+    if (data.action === 'manualFiles') {
+      return handleManualFiles_(data);
     }
 
     // (1) Midtrans server-to-server payment notification (webhook)
