@@ -178,9 +178,8 @@ function handleManualFiles_(data) {
   return json_({ ok: true, ref: ref, name: name, updated: updated });
 }
 
-// Admin-only: masked list of registrations still missing submission materials
-// (video / deck / headshot). Names are masked so this can't leak a clean PII list;
-// business + city stay clear so the admin can still tell people apart.
+// Admin-only: list of registrations still missing submission materials
+// (video / deck / headshot). Passcode-gated, so it returns full names for the admin.
 function handlePendingList_(data) {
   const pass = PropertiesService.getScriptProperties().getProperty('ADMIN_PASSCODE') || '';
   if (!pass) return json_({ ok: false, error: 'Server not set up: ADMIN_PASSCODE is missing.' });
@@ -211,24 +210,13 @@ function handlePendingList_(data) {
     if (!missing.length) continue;
     pending.push({
       ref: ref,
-      name: maskName_(cName >= 0 ? row[cName] : ''),
+      name: cName >= 0 ? String(row[cName] || '') : '',
       business: cBiz >= 0 ? String(row[cBiz] || '') : '',
       city: cCity >= 0 ? String(row[cCity] || '') : '',
       missing: missing
     });
   }
   return json_({ ok: true, count: pending.length, pending: pending });
-}
-
-// "Wilson Fauster" -> "W••••n F•••••r": recognisable if you know the name, obscured otherwise.
-function maskName_(s) {
-  s = String(s || '').trim();
-  if (!s) return '—';
-  return s.split(/\s+/).map(function (w) {
-    if (w.length <= 1) return w;
-    if (w.length === 2) return w.charAt(0) + '•';
-    return w.charAt(0) + Array(w.length - 1).join('•') + w.charAt(w.length - 1);
-  }).join(' ');
 }
 
 function doPost(e) {
@@ -247,7 +235,7 @@ function doPost(e) {
       return handleManualFiles_(data);
     }
 
-    // (0c) Admin: masked list of participants who still owe submission files.
+    // (0c) Admin: list of participants who still owe submission files.
     if (data.action === 'pendingList') {
       return handlePendingList_(data);
     }
