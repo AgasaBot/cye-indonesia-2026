@@ -496,6 +496,24 @@ const SEMIS_SHEET  = 'Semifinalists';
 const SCORES_SHEET = 'Scores';
 const REOPEN_WINDOW = 3; // a judge can reopen their N most-recently-locked scores
 
+// Seed data — written to the tabs the first time they're read (if empty).
+// Passwords are placeholders: change them in the "Judges" tab anytime.
+const DEFAULT_JUDGES = [
+  ['Rico Tedyono', 'Rico-7F2K', true],
+  ['Darwin Tjoe', 'Darwin-3QX', true],
+  ['Imelda Lim', 'Imelda-9M4', true],
+  ['Natali Ardianto', 'Natali-2ZP', true],
+  ['Dr. Anggara Hayun Anujuprana', 'Anggara-6T5', true],
+  ['Steven', 'Steven-8W9', true]
+];
+const SEMIFINALIST_NAMES = [
+  'Al Fath Nuur Rochman', 'Nadia Nathania', 'Alpvy Ramadhan', 'Clarabelle Laura Suhandinata',
+  'Yessi Calissa', 'Salsabilla Mazaya Ramadhani', 'Fahrizal Maulana', 'Saivya Chauhan',
+  'Gilbert Xervaxius Naphan', 'Arvega Andika Putra', 'Sidhi Umbara', 'Anastasia Laura Widjaja',
+  'Felicia Magdalena Limantoro', 'Bobby Yulandika Putra', 'Victor Osman', 'Ramzi Putera Faisal',
+  'Joshua William', 'Redha Bhawika Putra', 'ilham pinastiko', 'Fielien Kosasih'
+];
+
 function ssBook_() {
   return SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
 }
@@ -517,8 +535,15 @@ function judgeFromToken_(token) {
 
 /* ---- data readers ---- */
 function getJudges_() {
-  const sh = ssBook_().getSheetByName(JUDGES_SHEET);
-  if (!sh || sh.getLastRow() < 2) return [];
+  const ss = ssBook_();
+  let sh = ss.getSheetByName(JUDGES_SHEET);
+  if (!sh || sh.getLastRow() < 2) {
+    sh = sh || ss.insertSheet(JUDGES_SHEET);
+    sh.clear();
+    sh.getRange(1, 1, 1, 3).setValues([['Name', 'Password', 'Active']]);
+    sh.getRange(2, 1, DEFAULT_JUDGES.length, 3).setValues(DEFAULT_JUDGES);
+    sh.setFrozenRows(1);
+  }
   const v = sh.getDataRange().getValues();
   const head = v[0];
   const cN = head.indexOf('Name'), cP = head.indexOf('Password'), cA = head.indexOf('Active');
@@ -533,8 +558,22 @@ function getJudges_() {
 }
 
 function getSemifinalists_() {
-  const sh = ssBook_().getSheetByName(SEMIS_SHEET);
-  if (!sh || sh.getLastRow() < 2) return [];
+  const ss = ssBook_();
+  let sh = ss.getSheetByName(SEMIS_SHEET);
+  if (!sh || sh.getLastRow() < 2) {
+    sh = sh || ss.insertSheet(SEMIS_SHEET);
+    // match each name to its business from the Registrations tab (best effort, one time)
+    const reg = getSheet_().getDataRange().getValues();
+    const rh = reg[0], rcN = rh.indexOf('Full name'), rcB = rh.indexOf('Business');
+    const norm = function (s) { return String(s || '').toLowerCase().split(' ').filter(function (w) { return w; }).join(' '); };
+    const biz = {};
+    for (var r = 1; r < reg.length; r++) { var nm = norm(reg[r][rcN]); if (nm) biz[nm] = String(reg[r][rcB] || ''); }
+    const rows = SEMIFINALIST_NAMES.map(function (nm, i) { return [i + 1, nm, biz[norm(nm)] || '']; });
+    sh.clear();
+    sh.getRange(1, 1, 1, 3).setValues([['Seq', 'Name', 'Company']]);
+    sh.getRange(2, 1, rows.length, 3).setValues(rows);
+    sh.setFrozenRows(1);
+  }
   const v = sh.getDataRange().getValues();
   const head = v[0];
   const cS = head.indexOf('Seq'), cN = head.indexOf('Name'), cC = head.indexOf('Company');
@@ -699,69 +738,12 @@ function handleAdminScores_(data) {
   return json_({ ok: true, judges: judges, nJudges: nJudges, criteria: JUDGE_CRITERIA, rows: rows });
 }
 
-/* ---- one-time setup: run setupJudging() from the editor after deploy ----
- * Creates the three tabs and seeds Judges (6) + Semifinalists (20 in
- * presentation order, company matched from Registrations). Safe to re-run:
- * it only seeds a tab that has no data rows yet, so it never clobbers edits. */
+/* Optional manual seeder — not required, since getJudges_/getSemifinalists_/
+ * getScoresSheet_ create and seed their tabs on first use. Reading them here
+ * simply forces that seeding to happen now. */
 function setupJudging() {
-  const ss = ssBook_();
-  const log = [];
-
-  // Judges
-  var js = ss.getSheetByName(JUDGES_SHEET) || ss.insertSheet(JUDGES_SHEET);
-  if (js.getLastRow() < 2) {
-    var judgeRows = [
-      ['Rico Tedyono', 'Rico-7F2K', true],
-      ['Darwin Tjoe', 'Darwin-3QX', true],
-      ['Imelda Lim', 'Imelda-9M4', true],
-      ['Natali Ardianto', 'Natali-2ZP', true],
-      ['Dr. Anggara Hayun Anujuprana', 'Anggara-6T5', true],
-      ['Steven', 'Steven-8W9', true]
-    ];
-    js.clear();
-    js.getRange(1, 1, 1, 3).setValues([['Name', 'Password', 'Active']]);
-    js.getRange(2, 1, judgeRows.length, 3).setValues(judgeRows);
-    js.setFrozenRows(1);
-    log.push('Judges: seeded ' + judgeRows.length);
-  } else { log.push('Judges: already has data, left as-is'); }
-
-  // Semifinalists (presentation order) + company match from Registrations
-  var names = [
-    'Al Fath Nuur Rochman', 'Nadia Nathania', 'Alpvy Ramadhan', 'Clarabelle Laura Suhandinata',
-    'Yessi Calissa', 'Salsabilla Mazaya Ramadhani', 'Fahrizal Maulana', 'Saivya Chauhan',
-    'Gilbert Xervaxius Naphan', 'Arvega Andika Putra', 'Sidhi Umbara', 'Anastasia Laura Widjaja',
-    'Felicia Magdalena Limantoro', 'Bobby Yulandika Putra', 'Victor Osman', 'Ramzi Putera Faisal',
-    'Joshua William', 'Redha Bhawika Putra', 'ilham pinastiko', 'Fielien Kosasih'
-  ];
-  var semis = ss.getSheetByName(SEMIS_SHEET) || ss.insertSheet(SEMIS_SHEET);
-  if (semis.getLastRow() < 2) {
-    // build a name->business map from Registrations
-    var reg = getSheet_().getDataRange().getValues();
-    var rh = reg[0], rcN = rh.indexOf('Full name'), rcB = rh.indexOf('Business');
-    var norm = function (s) { return String(s || '').toLowerCase().replace(/\s+/g, ' ').trim(); };
-    var bizByName = {};
-    for (var r = 1; r < reg.length; r++) { var nm = norm(reg[r][rcN]); if (nm) bizByName[nm] = String(reg[r][rcB] || ''); }
-    var rows = [], matched = 0;
-    names.forEach(function (nm, idx) {
-      var biz = bizByName[norm(nm)] || '';
-      if (biz) matched++;
-      rows.push([idx + 1, nm, biz]);
-    });
-    semis.clear();
-    semis.getRange(1, 1, 1, 3).setValues([['Seq', 'Name', 'Company']]);
-    semis.getRange(2, 1, rows.length, 3).setValues(rows);
-    semis.setFrozenRows(1);
-    log.push('Semifinalists: seeded ' + rows.length + ', companies matched ' + matched + '/' + rows.length);
-  } else { log.push('Semifinalists: already has data, left as-is'); }
-
-  getScoresSheet_(); // ensure Scores tab + headers exist
-  log.push('Scores tab ready');
-
-  // set a token secret if not present
-  var props = PropertiesService.getScriptProperties();
-  if (!props.getProperty('JUDGE_SECRET')) props.setProperty('JUDGE_SECRET', Utilities.getUuid());
-  log.push('JUDGE_SECRET ok');
-
-  Logger.log(log.join('\n'));
-  return log.join('\n');
+  getJudges_();
+  getSemifinalists_();
+  getScoresSheet_();
+  return 'Judging tabs ensured (Judges, Semifinalists, Scores).';
 }
