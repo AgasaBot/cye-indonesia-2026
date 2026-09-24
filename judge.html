@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Judge scoring — CYE Indonesia 2026</title>
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#0a0f29">
@@ -17,118 +17,128 @@
     --muted:#5d6b88; --line:rgba(14,26,60,.12); --err:#d23a57; --amber:#b7791f;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Inter',system-ui,sans-serif;background:var(--navy);color:var(--navy);
-    line-height:1.5;-webkit-font-smoothing:antialiased;padding:16px 12px 40px}
-  .wrap{max-width:680px;margin:0 auto}
-  .card{background:var(--white);border-radius:18px;overflow:hidden;box-shadow:0 24px 60px -20px rgba(0,0,0,.5)}
-  .hd{background:var(--navy);color:#fff;padding:18px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px}
-  .hd .kicker{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--teal)}
-  .hd h1{font-family:'Montserrat',sans-serif;font-weight:800;font-size:18px;margin-top:3px}
-  .hd .who{font-size:12.5px;color:#c9d5ec;text-align:right}
-  .hd .who b{color:#fff;display:block;font-size:13.5px}
-  .lnk{background:none;border:none;color:var(--teal-light);font:inherit;font-size:12px;cursor:pointer;text-decoration:underline;padding:0}
-  .bd{padding:16px 18px 20px}
-  label{font-size:12.5px;font-weight:600;color:var(--navy);display:block;margin-bottom:5px}
+  body{font-family:'Inter',system-ui,sans-serif;background:#eef1f6;color:var(--navy);
+    line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:920px;margin:0 auto;padding:0 12px 60px}
+  /* ---------- login ---------- */
+  .login-shell{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+  .login{width:100%;max-width:380px;background:var(--white);border-radius:18px;overflow:hidden;box-shadow:0 24px 60px -20px rgba(0,0,0,.5)}
+  .login .hd{background:var(--navy);color:#fff;padding:22px 24px}
+  .login .kicker{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--teal)}
+  .login .hd h1{font-family:'Montserrat',sans-serif;font-weight:800;font-size:20px;margin-top:4px}
+  .login .bd{padding:20px 22px 22px}
+  label{font-size:12.5px;font-weight:600;display:block;margin-bottom:5px}
   input,select{font-family:inherit;font-size:16px;color:var(--navy);background:#fff;border:1.5px solid var(--line);
     border-radius:10px;padding:11px 12px;width:100%}
   input:focus,select:focus{outline:none;border-color:var(--teal-deep)}
-  .btn{width:100%;font-family:'Montserrat',sans-serif;font-weight:800;font-size:15.5px;background:var(--teal);
-    color:var(--navy);border:none;border-radius:12px;padding:14px;cursor:pointer;transition:filter .15s,transform .1s}
+  .btn{font-family:'Montserrat',sans-serif;font-weight:800;font-size:15px;background:var(--teal);color:var(--navy);
+    border:none;border-radius:11px;padding:13px 16px;cursor:pointer;transition:filter .15s,transform .1s;width:100%}
   .btn:hover{filter:brightness(1.05)} .btn:active{transform:translateY(1px)} .btn:disabled{opacity:.55;cursor:default}
+  .btn.sm{width:auto;font-size:13.5px;padding:10px 16px}
   .btn.ghost{background:#fff;color:var(--teal-deep);box-shadow:inset 0 0 0 1.5px var(--teal-deep)}
-  .btn.ghost:hover{background:var(--mist-2);filter:none}
   .btn.amber{background:#fff;color:var(--amber);box-shadow:inset 0 0 0 1.5px #e2c07a}
   .msg{border-radius:10px;padding:10px 13px;font-size:13px;font-weight:500;margin-bottom:12px;display:none}
   .msg.ok{display:block;background:var(--mist);color:#0d5c43;border:1px solid var(--teal)}
   .msg.bad{display:block;background:#fdeef1;color:var(--err);border:1px solid #f2b8c4}
-  /* progress */
-  .prog{font-size:12.5px;color:var(--muted);margin-bottom:12px}
-  .prog b{color:var(--navy)}
-  /* list */
-  .plist{display:flex;flex-direction:column;gap:8px}
-  .prow{display:flex;align-items:center;gap:12px;border:1.5px solid var(--line);border-radius:12px;
-    padding:12px 14px;cursor:pointer;background:#fff;transition:border-color .15s,background .15s}
-  .prow:hover{border-color:var(--teal-deep);background:var(--mist-2)}
-  .pseq{flex:none;width:30px;height:30px;border-radius:8px;background:var(--navy);color:#fff;font-family:'Montserrat',sans-serif;
-    font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center}
-  .pmain{flex:1;min-width:0}
-  .pname{font-weight:700;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .pcompany{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .pstat{flex:none;font-size:11.5px;font-weight:700;border-radius:999px;padding:4px 10px}
-  .st-none{background:#eef1f6;color:var(--muted)}
-  .st-draft{background:#fff6dd;color:#7a5c00}
-  .st-locked{background:var(--mist);color:var(--teal-deep)}
-  .pavg{flex:none;font-family:'Montserrat',sans-serif;font-weight:800;font-size:14px;color:var(--navy);min-width:46px;text-align:right}
-  /* editor */
-  .back{background:none;border:none;color:var(--teal-deep);font:inherit;font-weight:700;font-size:14px;cursor:pointer;padding:0;margin-bottom:12px}
-  .ehead{margin-bottom:14px}
-  .ehead .eseq{font-family:'Montserrat',sans-serif;font-weight:800;font-size:12px;color:var(--teal-deep);letter-spacing:.05em}
-  .ehead h2{font-family:'Montserrat',sans-serif;font-weight:800;font-size:20px;line-height:1.15;margin:2px 0}
-  .ehead .eco{font-size:14px;color:var(--muted)}
-  .crit{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}
-  .crit .clab{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:8px}
-  .crit .cname{font-weight:700;font-size:14px}
-  .crit .cmax{font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap}
-  .crit .cdesc{font-size:12px;color:var(--muted);margin-bottom:10px}
-  .stepper{display:flex;align-items:center;gap:10px}
-  .stepper button{flex:none;width:42px;height:42px;border-radius:10px;border:1.5px solid var(--line);background:#fff;
-    font-size:22px;font-weight:700;color:var(--navy);cursor:pointer;line-height:1}
-  .stepper button:active{background:var(--mist)}
-  .stepper input{text-align:center;font-family:'Montserrat',sans-serif;font-weight:800;font-size:18px;padding:9px}
-  .total{display:flex;justify-content:space-between;align-items:center;background:var(--navy);color:#fff;border-radius:12px;
-    padding:13px 16px;margin:14px 0}
-  .total .tl{font-size:13px;color:#c9d5ec;font-weight:600}
-  .total .tv{font-family:'Montserrat',sans-serif;font-weight:900;font-size:22px}
-  .total .tv small{font-size:13px;font-weight:700;color:#9fb0d0}
-  .eactions{display:flex;gap:10px}
-  .eactions .btn{flex:1}
-  .lockbadge{background:var(--mist);border:1px solid var(--teal);border-radius:12px;padding:12px 14px;font-size:13.5px;
-    color:#0d5c43;font-weight:600;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:10px}
-  .avgbadge{background:#fff6dd;border:1px solid #e6cf86;border-radius:12px;padding:12px 14px;font-size:13.5px;color:#7a5c00;
-    font-weight:600;margin-bottom:12px}
-  .avgbadge b{font-family:'Montserrat',sans-serif;font-size:16px}
+  /* ---------- sticky header ---------- */
+  .topbar{position:sticky;top:0;z-index:20;background:var(--navy);color:#fff;box-shadow:0 2px 12px rgba(0,0,0,.25)}
+  .topbar-in{max-width:920px;margin:0 auto;padding:11px 14px;display:flex;align-items:center;gap:12px}
+  .tb-title{font-family:'Montserrat',sans-serif;font-weight:800;font-size:15px;white-space:nowrap}
+  .tb-title span{display:block;font-family:'Inter',sans-serif;font-weight:600;font-size:11px;color:var(--teal);letter-spacing:.1em;text-transform:uppercase}
+  .tb-prog{flex:1;min-width:0}
+  .tb-bar{height:8px;background:rgba(255,255,255,.14);border-radius:99px;overflow:hidden}
+  .tb-bar span{display:block;height:100%;background:var(--teal);width:0;transition:width .3s}
+  .tb-prog small{font-size:11.5px;color:#c9d5ec;display:block;margin-top:3px}
+  .tb-who{font-size:12px;color:#c9d5ec;text-align:right;white-space:nowrap}
+  .tb-who b{color:#fff;display:block;font-size:13px}
+  .lnk{background:none;border:none;color:var(--teal-light);font:inherit;font-size:11.5px;cursor:pointer;text-decoration:underline;padding:0}
+  /* ---------- intro / guide ---------- */
+  .intro{background:var(--white);border-radius:12px;padding:12px 16px;margin:14px 0;font-size:13px;color:var(--muted);border:1px solid var(--line)}
+  .intro b{color:var(--navy)}
+  .guide{margin-top:8px;display:none}
+  .guide.open{display:block}
+  .guide ul{list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:6px 18px;margin-top:6px}
+  .guide li{font-size:12px}
+  .guide li b{color:var(--teal-deep)}
+  .guide-toggle{background:none;border:none;color:var(--teal-deep);font:inherit;font-weight:700;font-size:12.5px;cursor:pointer;padding:0;text-decoration:underline}
+  /* ---------- participant card ---------- */
+  .pcard{background:var(--white);border:1.5px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:12px;transition:border-color .15s,opacity .2s}
+  .pcard.locked{background:#fafcff;border-color:var(--teal-light)}
+  .pc-top{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+  .pseq{flex:none;width:34px;height:34px;border-radius:9px;background:var(--navy);color:#fff;font-family:'Montserrat',sans-serif;
+    font-weight:800;font-size:14px;display:flex;align-items:center;justify-content:center}
+  .pcard.locked .pseq{background:var(--teal-deep)}
+  .pc-id{flex:1;min-width:0}
+  .pc-name{font-weight:800;font-size:15.5px;line-height:1.2}
+  .pc-co{font-size:12.5px;color:var(--muted)}
+  .pc-total{flex:none;text-align:right;font-family:'Montserrat',sans-serif;font-weight:900;font-size:20px;color:var(--navy)}
+  .pc-total small{font-size:11px;font-weight:700;color:var(--muted)}
+  .pc-status{flex:none;font-size:11px;font-weight:700;border-radius:999px;padding:4px 10px}
+  .st-none{background:#eef1f6;color:var(--muted)} .st-draft{background:#fff6dd;color:#7a5c00} .st-locked{background:var(--mist);color:var(--teal-deep)}
+  .pc-crit{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+  .ct{border:1px solid var(--line);border-radius:10px;padding:8px 8px 9px;text-align:center}
+  .ct-lab{font-size:10.5px;font-weight:700;color:var(--navy);line-height:1.2;min-height:26px;display:flex;align-items:center;justify-content:center;text-align:center}
+  .ct-lab i{color:var(--muted);font-weight:600;font-style:normal}
+  .ct-step{display:flex;align-items:center;gap:4px;margin-top:6px}
+  .ct-step button{flex:none;width:30px;height:34px;border-radius:8px;border:1.5px solid var(--line);background:#fff;font-size:18px;font-weight:700;color:var(--navy);cursor:pointer;line-height:1}
+  .ct-step button:active{background:var(--mist)}
+  .ct-step input{width:100%;text-align:center;font-family:'Montserrat',sans-serif;font-weight:800;font-size:16px;padding:7px 2px;border-radius:8px}
+  .pcard.locked .ct-step button{display:none}
+  .pcard.locked .ct-step input{border-color:transparent;background:transparent;color:var(--navy)}
+  .pc-actions{display:flex;align-items:center;gap:10px;margin-top:12px}
+  .pc-actions .sp{flex:1}
+  .save-note{font-size:11.5px;color:var(--muted)}
+  .save-note.ok{color:var(--teal-deep)}
+  .avgband{display:flex;align-items:center;justify-content:space-between;gap:10px;background:linear-gradient(90deg,var(--mist),var(--mist-2));
+    border:1px solid var(--teal);border-radius:10px;padding:10px 14px;margin-top:12px}
+  .avgband .al{font-size:12px;font-weight:700;color:var(--teal-deep);text-transform:uppercase;letter-spacing:.06em}
+  .avgband .av{font-family:'Montserrat',sans-serif;font-weight:900;font-size:22px;color:var(--navy)}
+  .avgband .av small{font-size:12px;font-weight:700;color:var(--muted)}
+  .avgband .note{font-size:11px;color:var(--muted)}
+  .lockcount{font-size:11.5px;color:var(--muted)}
+  @media(max-width:640px){
+    .pc-crit{grid-template-columns:repeat(2,1fr)}
+    .guide ul{grid-template-columns:1fr}
+    .tb-title span{display:none}
+  }
   [hidden]{display:none!important}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="card">
-    <header class="hd">
-      <div><div class="kicker">CYE 2026 · Semifinal</div><h1>Judge scoring</h1></div>
-      <div class="who" id="who" hidden></div>
-    </header>
+
+<!-- LOGIN -->
+<div class="login-shell" id="loginShell">
+  <div class="login">
+    <div class="hd"><div class="kicker">CYE 2026 · Semifinal</div><h1>Judge scoring</h1></div>
     <div class="bd">
-      <div id="msg" class="msg"></div>
-
-      <!-- LOGIN -->
-      <div id="loginView">
-        <div style="margin-bottom:14px">
-          <label>Your name</label>
-          <select id="loginName"><option value="">Loading judges…</option></select>
-        </div>
-        <div style="margin-bottom:16px">
-          <label>Password</label>
-          <input type="password" id="loginPass" autocomplete="off" placeholder="Enter your password">
-        </div>
-        <button class="btn" id="loginBtn">Enter →</button>
-      </div>
-
-      <!-- LIST -->
-      <div id="listView" hidden>
-        <div class="prog" id="prog"></div>
-        <div class="plist" id="plist"></div>
-      </div>
-
-      <!-- EDITOR -->
-      <div id="editView" hidden>
-        <button class="back" id="backBtn">← All participants</button>
-        <div class="ehead" id="ehead"></div>
-        <div id="critWrap"></div>
-        <div class="total"><span class="tl">Total score</span><span class="tv"><span id="totalVal">0</span> <small>/ 100</small></span></div>
-        <div id="editMsg"></div>
-        <div class="eactions" id="eactions"></div>
-      </div>
+      <div id="loginMsg" class="msg"></div>
+      <div style="margin-bottom:14px"><label>Your name</label>
+        <select id="loginName"><option value="">Loading judges…</option></select></div>
+      <div style="margin-bottom:16px"><label>Password</label>
+        <input type="password" id="loginPass" autocomplete="off" placeholder="Enter your password"></div>
+      <button class="btn" id="loginBtn">Enter →</button>
     </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app" hidden>
+  <div class="topbar">
+    <div class="topbar-in">
+      <div class="tb-title">Semifinal scoring<span>CYE 2026</span></div>
+      <div class="tb-prog"><div class="tb-bar"><span id="progBar"></span></div><small id="progText">—</small></div>
+      <div class="tb-who" id="who"></div>
+    </div>
+  </div>
+  <div class="wrap">
+    <div id="appMsg" class="msg"></div>
+    <div class="intro">
+      Score every participant on the five criteria (total <b>/100</b>), then press <b>Lock in</b>. Your entries save as you type.
+      You can <b>reopen</b> only your 3 most‑recently‑locked scores. Once all judges lock a participant, its panel average appears here.
+      <button class="guide-toggle" id="guideToggle">Show criteria guide</button>
+      <div class="guide" id="guide"></div>
+    </div>
+    <div id="cards"></div>
   </div>
 </div>
 
@@ -137,216 +147,233 @@
   var ENDPOINT = 'https://script.google.com/macros/s/AKfycbwY5zaPSyDHNjbjvBsBUbMrjWd_mMPWyywfEFBIFtsgkmodhG8D9gxC9dGezsCf6iwN/exec';
   var CRIT_DESC = {
     'Community & Social Impact': 'How the business benefits society and its long-term sustainability.',
-    'Business & International Impact': "The business's economic potential and scalability — locally and internationally.",
-    'Innovation & Originality': 'The uniqueness and creative disruption of the business idea.',
-    'Leadership Ability': "The founder's leadership skills and ability to drive the business forward.",
-    'Clarity & Quality of Presentation': 'The effectiveness and clarity of the pitch, including the Q&A.'
+    'Business & International Impact': "Economic potential and scalability — locally and internationally.",
+    'Innovation & Originality': 'Uniqueness and creative disruption of the idea.',
+    'Leadership Ability': "The founder's leadership and drive.",
+    'Clarity & Quality of Presentation': 'Effectiveness and clarity of the pitch, including Q&A.'
   };
   var $ = function(s){ return document.querySelector(s); };
-  var msg = $('#msg');
-  var state = { token:null, name:null, data:null, current:null, draft:{}, pollTimer:null };
+  var st = { token:null, name:null, criteria:null, participants:null, nJudges:6,
+             scores:{}, locked:{}, cards:{}, built:false, poll:null };
 
-  function show(kind, text){ msg.className='msg '+kind; msg.textContent=text; }
-  function clearMsg(){ msg.className='msg'; msg.textContent=''; }
-  function post(body){ return fetch(ENDPOINT,{method:'POST',body:JSON.stringify(body)}).then(function(r){return r.json();}); }
+  function post(b){ return fetch(ENDPOINT,{method:'POST',body:JSON.stringify(b)}).then(function(r){return r.json();}); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+  function show(el,kind,text){ el.className='msg '+kind; el.textContent=text; }
 
   /* ---------- login ---------- */
-  function loadJudgeNames(){
-    post({action:'judgeNames'}).then(function(d){
-      var sel = $('#loginName'); sel.innerHTML='';
-      var ph=document.createElement('option'); ph.value=''; ph.textContent='Select your name…'; sel.appendChild(ph);
-      (d.judges||[]).forEach(function(n){ var o=document.createElement('option'); o.value=n; o.textContent=n; sel.appendChild(o); });
-    }).catch(function(){ $('#loginName').innerHTML='<option value="">Could not load — check connection</option>'; });
-  }
+  post({action:'judgeNames'}).then(function(d){
+    var sel=$('#loginName'); sel.innerHTML='<option value="">Select your name…</option>';
+    (d.judges||[]).forEach(function(n){ var o=document.createElement('option'); o.value=n; o.textContent=n; sel.appendChild(o); });
+  }).catch(function(){ $('#loginName').innerHTML='<option value="">Could not load — check connection</option>'; });
+
   $('#loginBtn').addEventListener('click', function(){
-    clearMsg();
+    var m=$('#loginMsg'); m.className='msg';
     var name=$('#loginName').value, pass=$('#loginPass').value;
-    if(!name){ show('bad','Select your name.'); return; }
-    if(!pass){ show('bad','Enter your password.'); return; }
+    if(!name){ show(m,'bad','Select your name.'); return; }
+    if(!pass){ show(m,'bad','Enter your password.'); return; }
     var b=$('#loginBtn'); b.disabled=true; b.textContent='Checking…';
     post({action:'judgeLogin', name:name, password:pass}).then(function(d){
-      if(d && d.ok){
-        state.token=d.token; state.name=d.name;
-        try{ localStorage.setItem('cye_judge_token', d.token); }catch(e){}
-        enterApp();
-      } else { show('bad', (d&&d.error)||'Login failed.'); }
-    }).catch(function(){ show('bad','Could not reach the server. Check your connection.'); })
+      if(d&&d.ok){ st.token=d.token; st.name=d.name; try{localStorage.setItem('cye_judge_token',d.token);}catch(e){} enterApp(); }
+      else show(m,'bad',(d&&d.error)||'Login failed.');
+    }).catch(function(){ show(m,'bad','Could not reach the server.'); })
     .finally(function(){ b.disabled=false; b.textContent='Enter →'; });
   });
   $('#loginPass').addEventListener('keydown', function(e){ if(e.key==='Enter') $('#loginBtn').click(); });
 
-  function logout(){
-    try{ localStorage.removeItem('cye_judge_token'); }catch(e){}
-    if(state.pollTimer) clearInterval(state.pollTimer);
-    location.reload();
-  }
+  function logout(){ try{localStorage.removeItem('cye_judge_token');}catch(e){} if(st.poll) clearInterval(st.poll); location.reload(); }
 
   function enterApp(){
-    $('#loginView').hidden=true;
-    var who=$('#who'); who.hidden=false;
-    who.innerHTML='<b>'+esc(state.name)+'</b><button class="lnk" id="logoutBtn">Log out</button>';
+    $('#loginShell').hidden=true; $('#app').hidden=false;
+    $('#who').innerHTML='<b>'+esc(st.name)+'</b><button class="lnk" id="logoutBtn">Log out</button>';
     $('#logoutBtn').addEventListener('click', logout);
-    refresh(true);
-    state.pollTimer=setInterval(function(){ refresh(false); }, 15000);
+    load(true);
+    st.poll=setInterval(function(){ load(false); }, 20000);
   }
-
-  /* ---------- data + list ---------- */
-  function refresh(showList){
-    return post({action:'judgeData', token:state.token}).then(function(d){
-      if(!d || !d.ok){ if(d&&/log in/i.test(d.error||'')){ logout(); return; } show('bad',(d&&d.error)||'Could not load.'); return; }
-      clearMsg();
-      state.data=d;
-      if(showList){ $('#listView').hidden=false; }
-      if($('#editView').hidden===false && state.current){ renderEditor(state.current); } // refresh editor state
-      renderList();
-    }).catch(function(){ /* keep last view on transient poll error */ });
-  }
-
-  function statusOf(seq){
-    var d=state.data, mine=d.mine[seq];
-    var locked = mine && mine.locked;
-    var draft = mine && !mine.locked && (mine.total>0 || (mine.scores||[]).some(function(x){return x>0;}));
-    return locked ? 'locked' : (draft ? 'draft' : 'none');
-  }
-  function renderList(){
-    var d=state.data, list=$('#plist'); list.innerHTML='';
-    var done=0;
-    d.participants.forEach(function(p){
-      var st=statusOf(p.seq); if(st==='locked') done++;
-      var mine=d.mine[p.seq];
-      var avg=d.average[p.seq];
-      var row=document.createElement('div'); row.className='prow';
-      var statHtml = st==='locked' ? '<span class="pstat st-locked">Locked '+(mine?mine.total:'')+'</span>'
-                   : st==='draft'  ? '<span class="pstat st-draft">Draft</span>'
-                   : '<span class="pstat st-none">Not scored</span>';
-      var avgHtml = (avg!=null) ? '<span class="pavg" title="Panel average">'+avg+'</span>' : '<span class="pavg" style="color:#c3cad8">'+(d.lockCount[p.seq]||0)+'/'+d.nJudges+'</span>';
-      row.innerHTML='<span class="pseq">'+p.seq+'</span>'
-        +'<span class="pmain"><span class="pname">'+esc(p.name)+'</span><span class="pcompany">'+esc(p.company||'—')+'</span></span>'
-        +statHtml+avgHtml;
-      row.addEventListener('click', function(){ openEditor(p.seq); });
-      list.appendChild(row);
-    });
-    $('#prog').innerHTML='You have locked <b>'+done+' of '+d.participants.length+'</b> participants. '
-      +'Numbers on the right show how many of '+d.nJudges+' judges have locked (or the panel average once all have).';
-  }
-
-  /* ---------- editor ---------- */
-  function openEditor(seq){
-    state.current=seq;
-    $('#listView').hidden=true; $('#editView').hidden=false; window.scrollTo(0,0);
-    renderEditor(seq);
-  }
-  $('#backBtn').addEventListener('click', function(){
-    state.current=null; $('#editView').hidden=true; $('#listView').hidden=false;
+  $('#guideToggle').addEventListener('click', function(){
+    var g=$('#guide'); g.classList.toggle('open');
+    this.textContent = g.classList.contains('open') ? 'Hide criteria guide' : 'Show criteria guide';
   });
 
-  function renderEditor(seq){
-    var d=state.data;
-    var p=d.participants.filter(function(x){return x.seq===seq;})[0]; if(!p) return;
-    var mine=d.mine[seq];
-    var locked = mine && mine.locked;
-    var reopenable = d.reopenable.indexOf(seq)>=0;
-    var avg=d.average[seq];
+  /* ---------- load data ---------- */
+  function load(first){
+    return post({action:'judgeData', token:st.token}).then(function(d){
+      if(!d||!d.ok){ if(d&&/log in/i.test(d.error||'')) return logout(); show($('#appMsg'),'bad',(d&&d.error)||'Could not load.'); return; }
+      st.criteria=d.criteria; st.participants=d.participants; st.nJudges=d.nJudges;
+      if(!st.built){ buildGuide(); buildCards(d); st.built=true; }
+      applyData(d, first);
+    }).catch(function(){ /* keep current view on transient poll error */ });
+  }
 
-    $('#ehead').innerHTML='<div class="eseq">PARTICIPANT '+p.seq+' OF '+d.participants.length+'</div>'
-      +'<h2>'+esc(p.name)+'</h2><div class="eco">'+esc(p.company||'—')+'</div>';
-    $('#editMsg').innerHTML='';
+  function buildGuide(){
+    $('#guide').innerHTML='<ul>'+st.criteria.map(function(c){
+      return '<li><b>'+esc(c.label)+' (/'+c.max+')</b> — '+esc(CRIT_DESC[c.label]||'')+'</li>';
+    }).join('')+'</ul>';
+  }
 
-    // starting values: existing scores or zeros
-    var vals = (mine && mine.scores) ? mine.scores.slice() : d.criteria.map(function(){return 0;});
-    state.draft[seq] = state.draft[seq] || vals.slice();
-    if(mine && mine.scores) state.draft[seq]=mine.scores.slice();
-    var cur = state.draft[seq];
+  function abbr(l){ return l.replace('Community & Social Impact','Community & Social').replace('Business & International Impact','Business & Int’l').replace('Innovation & Originality','Innovation').replace('Leadership Ability','Leadership').replace('Clarity & Quality of Presentation','Presentation'); }
 
-    var wrap=$('#critWrap'); wrap.innerHTML='';
-    d.criteria.forEach(function(c,i){
-      var el=document.createElement('div'); el.className='crit';
-      el.innerHTML='<div class="clab"><span class="cname">'+esc(c.label)+'</span><span class="cmax">0–'+c.max+'</span></div>'
-        +'<div class="cdesc">'+esc(CRIT_DESC[c.label]||'')+'</div>'
-        +'<div class="stepper"><button type="button" data-d="-1">−</button>'
-        +'<input type="number" inputmode="numeric" min="0" max="'+c.max+'" value="'+cur[i]+'" data-i="'+i+'">'
-        +'<button type="button" data-d="1">+</button></div>';
-      var input=el.querySelector('input');
-      function setVal(v){ v=Math.max(0,Math.min(c.max,Math.round(v||0))); input.value=v; cur[i]=v; updateTotal(); }
-      el.querySelectorAll('button').forEach(function(b){ b.addEventListener('click', function(){ if(locked) return; setVal((parseInt(input.value,10)||0)+parseInt(b.dataset.d,10)); }); });
-      input.addEventListener('input', function(){ if(locked){ input.value=cur[i]; return; } setVal(parseInt(input.value,10)); });
-      input.disabled=locked;
-      wrap.appendChild(el);
-    });
-    updateTotal();
+  function buildCards(d){
+    var host=$('#cards'); host.innerHTML='';
+    d.participants.forEach(function(p){
+      var card=document.createElement('div'); card.className='pcard'; card.id='card-'+p.seq;
+      var critHtml=st.criteria.map(function(c,i){
+        return '<div class="ct"><div class="ct-lab">'+esc(abbr(c.label))+' <i>/'+c.max+'</i></div>'
+          +'<div class="ct-step"><button type="button" data-seq="'+p.seq+'" data-i="'+i+'" data-d="-1">−</button>'
+          +'<input type="number" inputmode="numeric" min="0" max="'+c.max+'" data-seq="'+p.seq+'" data-i="'+i+'" value="0">'
+          +'<button type="button" data-seq="'+p.seq+'" data-i="'+i+'" data-d="1">+</button></div></div>';
+      }).join('');
+      card.innerHTML=
+        '<div class="pc-top"><span class="pseq">'+p.seq+'</span>'
+        +'<div class="pc-id"><div class="pc-name">'+esc(p.name)+'</div><div class="pc-co">'+esc(p.company||'—')+'</div></div>'
+        +'<div class="pc-total"><span class="tv">0</span><small>/100</small></div>'
+        +'<span class="pc-status st-none">Not scored</span></div>'
+        +'<div class="pc-crit">'+critHtml+'</div>'
+        +'<div class="pc-actions"><span class="lockcount"></span><span class="sp"></span><span class="save-note"></span>'
+        +'<button class="btn ghost sm act-draft" type="button">Save draft</button>'
+        +'<button class="btn sm act-lock" type="button">Lock in</button></div>'
+        +'<div class="avgband" hidden><div><div class="al">Panel average</div><div class="note"></div></div><div class="av"><span class="ava">–</span> <small>/ 100</small></div></div>';
+      host.appendChild(card);
 
-    // badges + actions
-    var actions=$('#eactions'); actions.innerHTML='';
-    var pre='';
-    if(avg!=null){ pre+='<div class="avgbadge">Panel average (all '+d.nJudges+' judges locked): <b>'+avg+' / 100</b> · highest & lowest dropped.</div>'; }
-    if(locked){
-      pre+='<div class="lockbadge"><span>🔒 Your score is locked — total <b>'+mine.total+'</b>.</span></div>';
-    }
-    $('#critWrap').insertAdjacentHTML('beforebegin', ''); // no-op keep order
-    $('#editMsg').innerHTML=pre;
+      var refs={ root:card,
+        inputs:[].slice.call(card.querySelectorAll('.ct-step input')),
+        total:card.querySelector('.tv'), status:card.querySelector('.pc-status'),
+        draftBtn:card.querySelector('.act-draft'), lockBtn:card.querySelector('.act-lock'),
+        actions:card.querySelector('.pc-actions'), saveNote:card.querySelector('.save-note'),
+        lockCount:card.querySelector('.lockcount'), avgband:card.querySelector('.avgband'),
+        avgVal:card.querySelector('.ava'), avgNote:card.querySelector('.avgband .note') };
+      st.cards[p.seq]=refs;
+      st.scores[p.seq]=st.scores[p.seq]||st.criteria.map(function(){return 0;});
 
-    if(!locked){
-      var draftBtn=document.createElement('button'); draftBtn.className='btn ghost'; draftBtn.textContent='Save draft';
-      draftBtn.addEventListener('click', function(){ saveScore(seq, cur, false); });
-      var lockBtn=document.createElement('button'); lockBtn.className='btn'; lockBtn.textContent='Lock in score';
-      lockBtn.addEventListener('click', function(){
-        if(!confirm('Lock in '+total(cur)+'/100 for '+p.name+'? You can reopen it only while it is one of your last '+3+' locked.')) return;
-        saveScore(seq, cur, true);
+      // steppers
+      card.querySelectorAll('.ct-step button').forEach(function(btn){
+        btn.addEventListener('click', function(){
+          if(st.locked[p.seq]) return;
+          var i=+btn.dataset.i, cur=+refs.inputs[i].value||0;
+          setVal(p.seq, i, cur + (+btn.dataset.d));
+        });
       });
-      actions.appendChild(draftBtn); actions.appendChild(lockBtn);
-    } else if(reopenable){
-      var reopen=document.createElement('button'); reopen.className='btn amber'; reopen.textContent='Reopen to edit';
-      reopen.addEventListener('click', function(){ reopenScore(seq); });
-      actions.appendChild(reopen);
+      refs.inputs.forEach(function(inp){
+        inp.addEventListener('input', function(){ if(st.locked[p.seq]){ inp.value=st.scores[p.seq][+inp.dataset.i]; return; } setVal(p.seq, +inp.dataset.i, parseInt(inp.value,10)); });
+      });
+      refs.draftBtn.addEventListener('click', function(){ saveScore(p.seq, false); });
+      refs.lockBtn.addEventListener('click', function(){
+        if(!confirm('Lock '+totalOf(p.seq)+'/100 for '+p.name+'?\nYou can reopen it only while it is one of your last 3 locked.')) return;
+        saveScore(p.seq, true);
+      });
+    });
+  }
+
+  var maxOf=function(i){ return st.criteria[i].max; };
+  function setVal(seq,i,v){ v=Math.max(0,Math.min(maxOf(i),Math.round(v||0))); st.scores[seq][i]=v; st.cards[seq].inputs[i].value=v; st.cards[seq].total.textContent=totalOf(seq); persistLocal(); scheduleDraft(seq); markStatus(seq); }
+  function totalOf(seq){ return (st.scores[seq]||[]).reduce(function(s,x){return s+(+x||0);},0); }
+  function persistLocal(){ try{ localStorage.setItem('cye_judge_drafts_'+st.name, JSON.stringify(st.scores)); }catch(e){} }
+  function markStatus(seq){ if(st.locked[seq]) return; var any=totalOf(seq)>0; var r=st.cards[seq]; r.status.className='pc-status '+(any?'st-draft':'st-none'); r.status.textContent=any?'Draft':'Not scored'; }
+
+  // debounced auto-save of drafts to the server (so nothing is lost / admin sees progress)
+  var draftTimers={};
+  function scheduleDraft(seq){
+    if(st.locked[seq]) return;
+    clearTimeout(draftTimers[seq]);
+    var r=st.cards[seq]; r.saveNote.className='save-note'; r.saveNote.textContent='';
+    draftTimers[seq]=setTimeout(function(){ saveScore(seq, false, true); }, 1400);
+  }
+
+  function saveScore(seq, lock, silent){
+    var r=st.cards[seq];
+    if(!silent){ r.draftBtn.disabled=true; r.lockBtn.disabled=true; r.saveNote.className='save-note'; r.saveNote.textContent=lock?'Locking…':'Saving…'; }
+    else { r.saveNote.className='save-note'; r.saveNote.textContent='Saving…'; }
+    post({action:'saveScore', token:st.token, seq:seq, scores:st.scores[seq], lock:lock}).then(function(d){
+      if(d&&d.ok){
+        r.saveNote.className='save-note ok'; r.saveNote.textContent=lock?'Locked ✓':'Saved ✓';
+        if(lock){ setLockedUI(seq,true); load(false); }
+      } else {
+        r.saveNote.className='save-note'; r.saveNote.style.color='var(--err)'; r.saveNote.textContent=(d&&d.error)||'Save failed';
+        if(d&&/log in/i.test(d.error||'')) logout();
+      }
+    }).catch(function(){ r.saveNote.className='save-note'; r.saveNote.style.color='var(--err)'; r.saveNote.textContent='Offline — will retry'; })
+    .finally(function(){ r.draftBtn.disabled=false; r.lockBtn.disabled=false; });
+  }
+
+  function reopen(seq){
+    var r=st.cards[seq];
+    post({action:'reopenScore', token:st.token, seq:seq}).then(function(d){
+      if(d&&d.ok){ setLockedUI(seq,false); r.saveNote.className='save-note'; r.saveNote.textContent='Reopened — edit and lock again'; }
+      else { alert((d&&d.error)||'Could not reopen.'); }
+    }).catch(function(){ alert('Could not reach the server.'); });
+  }
+
+  function setLockedUI(seq, locked){
+    st.locked[seq]=locked;
+    var r=st.cards[seq];
+    r.root.classList.toggle('locked', locked);
+    r.inputs.forEach(function(inp){ inp.disabled=locked; });
+    if(locked){
+      r.status.className='pc-status st-locked'; r.status.textContent='Locked';
+      r.draftBtn.hidden=true; r.lockBtn.hidden=true;
     } else {
-      var note=document.createElement('div'); note.style.cssText='font-size:12.5px;color:var(--muted);text-align:center;width:100%';
-      note.textContent='This score is locked and can no longer be changed (only your last 3 locked can be reopened).';
-      actions.appendChild(note);
+      r.draftBtn.hidden=false; r.lockBtn.hidden=false;
+      markStatus(seq);
+    }
+    refreshActionButtons(seq);
+  }
+
+  // reopen button appears only when this card is locked AND within the reopen window
+  function refreshActionButtons(seq){
+    var r=st.cards[seq];
+    var existing=r.actions.querySelector('.act-reopen'); if(existing) existing.remove();
+    var note=r.actions.querySelector('.locknote'); if(note) note.remove();
+    if(st.locked[seq]){
+      if(st.reopenable && st.reopenable.indexOf(seq)>=0){
+        var b=document.createElement('button'); b.className='btn amber sm act-reopen'; b.type='button'; b.textContent='Reopen';
+        b.addEventListener('click', function(){ reopen(seq); }); r.actions.appendChild(b);
+      } else {
+        var n=document.createElement('span'); n.className='save-note locknote'; n.textContent='Locked — can no longer change'; r.actions.appendChild(n);
+      }
     }
   }
-  function total(arr){ return arr.reduce(function(s,x){return s+(parseInt(x,10)||0);},0); }
-  function updateTotal(){ var seq=state.current; $('#totalVal').textContent = seq!=null ? total(state.draft[seq]||[]) : 0; }
 
-  function saveScore(seq, scores, lock){
-    setEditMsg('', 'Saving…');
-    post({action:'saveScore', token:state.token, seq:seq, scores:scores, lock:lock}).then(function(d){
-      if(d && d.ok){ delete state.draft[seq]; return refresh(false).then(function(){
-        if(lock){ // back to list after locking
-          state.current=null; $('#editView').hidden=true; $('#listView').hidden=false;
-          show('ok','Locked '+ (d.total!=null?d.total:'') +'/100. ✓');
-        } else { renderEditor(seq); setEditMsg('ok','Draft saved.'); }
-      }); }
-      else { setEditMsg('bad', (d&&d.error)||'Could not save.'); if(d&&/log in/i.test(d.error||'')) logout(); }
-    }).catch(function(){ setEditMsg('bad','Could not reach the server. Try again.'); });
+  function applyData(d, first){
+    st.reopenable=d.reopenable||[];
+    var lockedCount=0;
+    d.participants.forEach(function(p){
+      var seq=p.seq, r=st.cards[seq], mine=d.mine[seq];
+      // set inputs from server ONLY on first load, or if locked (server is source of truth for locked)
+      var isLocked = mine && mine.locked;
+      if(first){
+        // prefer a local draft for unlocked; server values otherwise
+        var draft=null; try{ var all=JSON.parse(localStorage.getItem('cye_judge_drafts_'+st.name)||'{}'); draft=all[seq]; }catch(e){}
+        var vals = isLocked ? mine.scores : (mine&&mine.scores && totalArr(mine.scores)>0 ? mine.scores : (draft||st.criteria.map(function(){return 0;})));
+        st.scores[seq]=vals.slice();
+        r.inputs.forEach(function(inp,i){ inp.value=vals[i]; });
+        r.total.textContent=totalOf(seq);
+      } else if(isLocked && !st.locked[seq]){
+        // became locked elsewhere — sync
+        st.scores[seq]=mine.scores.slice();
+        r.inputs.forEach(function(inp,i){ inp.value=mine.scores[i]; });
+        r.total.textContent=totalOf(seq);
+      }
+      setLockedUI(seq, !!isLocked);
+      if(isLocked) lockedCount++;
+      // lock count + average
+      var lc=d.lockCount[seq]||0, avg=d.average[seq];
+      r.lockCount.textContent=(avg!=null?'':(lc+' of '+d.nJudges+' judges locked'));
+      if(avg!=null){
+        r.avgband.hidden=false;
+        r.avgVal.textContent=avg;
+        r.avgNote.textContent='All '+d.nJudges+' locked · highest & lowest dropped';
+      } else { r.avgband.hidden=true; }
+    });
+    // progress
+    var pct=Math.round(lockedCount/d.participants.length*100);
+    $('#progBar').style.width=pct+'%';
+    $('#progText').textContent='You have locked '+lockedCount+' of '+d.participants.length+' participants';
   }
-  function reopenScore(seq){
-    post({action:'reopenScore', token:state.token, seq:seq}).then(function(d){
-      if(d && d.ok){ refresh(false).then(function(){ renderEditor(seq); setEditMsg('ok','Reopened — make your changes and lock again.'); }); }
-      else setEditMsg('bad',(d&&d.error)||'Could not reopen.');
-    }).catch(function(){ setEditMsg('bad','Could not reach the server.'); });
-  }
-  function setEditMsg(kind, text){
-    var m=$('#editMsg');
-    var extra = kind ? '<div class="msg '+kind+'" style="display:block">'+esc(text)+'</div>' : (text?'<div class="prog">'+esc(text)+'</div>':'');
-    // keep any badges already rendered above by re-rendering editor is heavy; just prepend a transient line
-    var host=document.createElement('div'); host.innerHTML=extra;
-    // remove previous transient
-    var prev=document.getElementById('_transient'); if(prev) prev.remove();
-    if(extra){ host.firstChild.id='_transient'; m.appendChild(host.firstChild); }
-  }
+  function totalArr(a){ return (a||[]).reduce(function(s,x){return s+(+x||0);},0); }
 
-  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
-
-  /* ---------- boot ---------- */
-  loadJudgeNames();
-  try{
-    var saved=localStorage.getItem('cye_judge_token');
-    if(saved){ state.token=saved; // verify by loading data
-      post({action:'judgeData', token:saved}).then(function(d){
-        if(d && d.ok){ state.name=d.name; enterApp(); }
-      }).catch(function(){});
-    }
-  }catch(e){}
+  /* ---------- resume session ---------- */
+  try{ var saved=localStorage.getItem('cye_judge_token'); if(saved){ st.token=saved;
+    post({action:'judgeData',token:saved}).then(function(d){ if(d&&d.ok){ st.name=d.name; enterApp(); } }).catch(function(){});
+  } }catch(e){}
 })();
 </script>
 </body>
