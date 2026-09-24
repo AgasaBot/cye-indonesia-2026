@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>Judge scoring — CYE Indonesia 2026</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0a0f29">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0a0f29; --navy-2:#121a3f; --teal:#72d9bf; --teal-deep:#159a78;
+    --teal-light:#a9e7d4; --mist:#e7f6f1; --mist-2:#f2fbf8; --white:#fefefe;
+    --muted:#5d6b88; --line:rgba(14,26,60,.12); --err:#d23a57; --amber:#b7791f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--navy);color:var(--navy);
+    line-height:1.5;-webkit-font-smoothing:antialiased;padding:16px 12px 40px}
+  .wrap{max-width:680px;margin:0 auto}
+  .card{background:var(--white);border-radius:18px;overflow:hidden;box-shadow:0 24px 60px -20px rgba(0,0,0,.5)}
+  .hd{background:var(--navy);color:#fff;padding:18px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .hd .kicker{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--teal)}
+  .hd h1{font-family:'Montserrat',sans-serif;font-weight:800;font-size:18px;margin-top:3px}
+  .hd .who{font-size:12.5px;color:#c9d5ec;text-align:right}
+  .hd .who b{color:#fff;display:block;font-size:13.5px}
+  .lnk{background:none;border:none;color:var(--teal-light);font:inherit;font-size:12px;cursor:pointer;text-decoration:underline;padding:0}
+  .bd{padding:16px 18px 20px}
+  label{font-size:12.5px;font-weight:600;color:var(--navy);display:block;margin-bottom:5px}
+  input,select{font-family:inherit;font-size:16px;color:var(--navy);background:#fff;border:1.5px solid var(--line);
+    border-radius:10px;padding:11px 12px;width:100%}
+  input:focus,select:focus{outline:none;border-color:var(--teal-deep)}
+  .btn{width:100%;font-family:'Montserrat',sans-serif;font-weight:800;font-size:15.5px;background:var(--teal);
+    color:var(--navy);border:none;border-radius:12px;padding:14px;cursor:pointer;transition:filter .15s,transform .1s}
+  .btn:hover{filter:brightness(1.05)} .btn:active{transform:translateY(1px)} .btn:disabled{opacity:.55;cursor:default}
+  .btn.ghost{background:#fff;color:var(--teal-deep);box-shadow:inset 0 0 0 1.5px var(--teal-deep)}
+  .btn.ghost:hover{background:var(--mist-2);filter:none}
+  .btn.amber{background:#fff;color:var(--amber);box-shadow:inset 0 0 0 1.5px #e2c07a}
+  .msg{border-radius:10px;padding:10px 13px;font-size:13px;font-weight:500;margin-bottom:12px;display:none}
+  .msg.ok{display:block;background:var(--mist);color:#0d5c43;border:1px solid var(--teal)}
+  .msg.bad{display:block;background:#fdeef1;color:var(--err);border:1px solid #f2b8c4}
+  /* progress */
+  .prog{font-size:12.5px;color:var(--muted);margin-bottom:12px}
+  .prog b{color:var(--navy)}
+  /* list */
+  .plist{display:flex;flex-direction:column;gap:8px}
+  .prow{display:flex;align-items:center;gap:12px;border:1.5px solid var(--line);border-radius:12px;
+    padding:12px 14px;cursor:pointer;background:#fff;transition:border-color .15s,background .15s}
+  .prow:hover{border-color:var(--teal-deep);background:var(--mist-2)}
+  .pseq{flex:none;width:30px;height:30px;border-radius:8px;background:var(--navy);color:#fff;font-family:'Montserrat',sans-serif;
+    font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center}
+  .pmain{flex:1;min-width:0}
+  .pname{font-weight:700;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pcompany{font-size:12.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pstat{flex:none;font-size:11.5px;font-weight:700;border-radius:999px;padding:4px 10px}
+  .st-none{background:#eef1f6;color:var(--muted)}
+  .st-draft{background:#fff6dd;color:#7a5c00}
+  .st-locked{background:var(--mist);color:var(--teal-deep)}
+  .pavg{flex:none;font-family:'Montserrat',sans-serif;font-weight:800;font-size:14px;color:var(--navy);min-width:46px;text-align:right}
+  /* editor */
+  .back{background:none;border:none;color:var(--teal-deep);font:inherit;font-weight:700;font-size:14px;cursor:pointer;padding:0;margin-bottom:12px}
+  .ehead{margin-bottom:14px}
+  .ehead .eseq{font-family:'Montserrat',sans-serif;font-weight:800;font-size:12px;color:var(--teal-deep);letter-spacing:.05em}
+  .ehead h2{font-family:'Montserrat',sans-serif;font-weight:800;font-size:20px;line-height:1.15;margin:2px 0}
+  .ehead .eco{font-size:14px;color:var(--muted)}
+  .crit{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+  .crit .clab{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:8px}
+  .crit .cname{font-weight:700;font-size:14px}
+  .crit .cmax{font-size:12px;color:var(--muted);font-weight:600;white-space:nowrap}
+  .crit .cdesc{font-size:12px;color:var(--muted);margin-bottom:10px}
+  .stepper{display:flex;align-items:center;gap:10px}
+  .stepper button{flex:none;width:42px;height:42px;border-radius:10px;border:1.5px solid var(--line);background:#fff;
+    font-size:22px;font-weight:700;color:var(--navy);cursor:pointer;line-height:1}
+  .stepper button:active{background:var(--mist)}
+  .stepper input{text-align:center;font-family:'Montserrat',sans-serif;font-weight:800;font-size:18px;padding:9px}
+  .total{display:flex;justify-content:space-between;align-items:center;background:var(--navy);color:#fff;border-radius:12px;
+    padding:13px 16px;margin:14px 0}
+  .total .tl{font-size:13px;color:#c9d5ec;font-weight:600}
+  .total .tv{font-family:'Montserrat',sans-serif;font-weight:900;font-size:22px}
+  .total .tv small{font-size:13px;font-weight:700;color:#9fb0d0}
+  .eactions{display:flex;gap:10px}
+  .eactions .btn{flex:1}
+  .lockbadge{background:var(--mist);border:1px solid var(--teal);border-radius:12px;padding:12px 14px;font-size:13.5px;
+    color:#0d5c43;font-weight:600;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .avgbadge{background:#fff6dd;border:1px solid #e6cf86;border-radius:12px;padding:12px 14px;font-size:13.5px;color:#7a5c00;
+    font-weight:600;margin-bottom:12px}
+  .avgbadge b{font-family:'Montserrat',sans-serif;font-size:16px}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <header class="hd">
+      <div><div class="kicker">CYE 2026 · Semifinal</div><h1>Judge scoring</h1></div>
+      <div class="who" id="who" hidden></div>
+    </header>
+    <div class="bd">
+      <div id="msg" class="msg"></div>
+
+      <!-- LOGIN -->
+      <div id="loginView">
+        <div style="margin-bottom:14px">
+          <label>Your name</label>
+          <select id="loginName"><option value="">Loading judges…</option></select>
+        </div>
+        <div style="margin-bottom:16px">
+          <label>Password</label>
+          <input type="password" id="loginPass" autocomplete="off" placeholder="Enter your password">
+        </div>
+        <button class="btn" id="loginBtn">Enter →</button>
+      </div>
+
+      <!-- LIST -->
+      <div id="listView" hidden>
+        <div class="prog" id="prog"></div>
+        <div class="plist" id="plist"></div>
+      </div>
+
+      <!-- EDITOR -->
+      <div id="editView" hidden>
+        <button class="back" id="backBtn">← All participants</button>
+        <div class="ehead" id="ehead"></div>
+        <div id="critWrap"></div>
+        <div class="total"><span class="tl">Total score</span><span class="tv"><span id="totalVal">0</span> <small>/ 100</small></span></div>
+        <div id="editMsg"></div>
+        <div class="eactions" id="eactions"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var ENDPOINT = 'https://script.google.com/macros/s/AKfycbwY5zaPSyDHNjbjvBsBUbMrjWd_mMPWyywfEFBIFtsgkmodhG8D9gxC9dGezsCf6iwN/exec';
+  var CRIT_DESC = {
+    'Community & Social Impact': 'How the business benefits society and its long-term sustainability.',
+    'Business & International Impact': "The business's economic potential and scalability — locally and internationally.",
+    'Innovation & Originality': 'The uniqueness and creative disruption of the business idea.',
+    'Leadership Ability': "The founder's leadership skills and ability to drive the business forward.",
+    'Clarity & Quality of Presentation': 'The effectiveness and clarity of the pitch, including the Q&A.'
+  };
+  var $ = function(s){ return document.querySelector(s); };
+  var msg = $('#msg');
+  var state = { token:null, name:null, data:null, current:null, draft:{}, pollTimer:null };
+
+  function show(kind, text){ msg.className='msg '+kind; msg.textContent=text; }
+  function clearMsg(){ msg.className='msg'; msg.textContent=''; }
+  function post(body){ return fetch(ENDPOINT,{method:'POST',body:JSON.stringify(body)}).then(function(r){return r.json();}); }
+
+  /* ---------- login ---------- */
+  function loadJudgeNames(){
+    post({action:'judgeNames'}).then(function(d){
+      var sel = $('#loginName'); sel.innerHTML='';
+      var ph=document.createElement('option'); ph.value=''; ph.textContent='Select your name…'; sel.appendChild(ph);
+      (d.judges||[]).forEach(function(n){ var o=document.createElement('option'); o.value=n; o.textContent=n; sel.appendChild(o); });
+    }).catch(function(){ $('#loginName').innerHTML='<option value="">Could not load — check connection</option>'; });
+  }
+  $('#loginBtn').addEventListener('click', function(){
+    clearMsg();
+    var name=$('#loginName').value, pass=$('#loginPass').value;
+    if(!name){ show('bad','Select your name.'); return; }
+    if(!pass){ show('bad','Enter your password.'); return; }
+    var b=$('#loginBtn'); b.disabled=true; b.textContent='Checking…';
+    post({action:'judgeLogin', name:name, password:pass}).then(function(d){
+      if(d && d.ok){
+        state.token=d.token; state.name=d.name;
+        try{ localStorage.setItem('cye_judge_token', d.token); }catch(e){}
+        enterApp();
+      } else { show('bad', (d&&d.error)||'Login failed.'); }
+    }).catch(function(){ show('bad','Could not reach the server. Check your connection.'); })
+    .finally(function(){ b.disabled=false; b.textContent='Enter →'; });
+  });
+  $('#loginPass').addEventListener('keydown', function(e){ if(e.key==='Enter') $('#loginBtn').click(); });
+
+  function logout(){
+    try{ localStorage.removeItem('cye_judge_token'); }catch(e){}
+    if(state.pollTimer) clearInterval(state.pollTimer);
+    location.reload();
+  }
+
+  function enterApp(){
+    $('#loginView').hidden=true;
+    var who=$('#who'); who.hidden=false;
+    who.innerHTML='<b>'+esc(state.name)+'</b><button class="lnk" id="logoutBtn">Log out</button>';
+    $('#logoutBtn').addEventListener('click', logout);
+    refresh(true);
+    state.pollTimer=setInterval(function(){ refresh(false); }, 15000);
+  }
+
+  /* ---------- data + list ---------- */
+  function refresh(showList){
+    return post({action:'judgeData', token:state.token}).then(function(d){
+      if(!d || !d.ok){ if(d&&/log in/i.test(d.error||'')){ logout(); return; } show('bad',(d&&d.error)||'Could not load.'); return; }
+      clearMsg();
+      state.data=d;
+      if(showList){ $('#listView').hidden=false; }
+      if($('#editView').hidden===false && state.current){ renderEditor(state.current); } // refresh editor state
+      renderList();
+    }).catch(function(){ /* keep last view on transient poll error */ });
+  }
+
+  function statusOf(seq){
+    var d=state.data, mine=d.mine[seq];
+    var locked = mine && mine.locked;
+    var draft = mine && !mine.locked && (mine.total>0 || (mine.scores||[]).some(function(x){return x>0;}));
+    return locked ? 'locked' : (draft ? 'draft' : 'none');
+  }
+  function renderList(){
+    var d=state.data, list=$('#plist'); list.innerHTML='';
+    var done=0;
+    d.participants.forEach(function(p){
+      var st=statusOf(p.seq); if(st==='locked') done++;
+      var mine=d.mine[p.seq];
+      var avg=d.average[p.seq];
+      var row=document.createElement('div'); row.className='prow';
+      var statHtml = st==='locked' ? '<span class="pstat st-locked">Locked '+(mine?mine.total:'')+'</span>'
+                   : st==='draft'  ? '<span class="pstat st-draft">Draft</span>'
+                   : '<span class="pstat st-none">Not scored</span>';
+      var avgHtml = (avg!=null) ? '<span class="pavg" title="Panel average">'+avg+'</span>' : '<span class="pavg" style="color:#c3cad8">'+(d.lockCount[p.seq]||0)+'/'+d.nJudges+'</span>';
+      row.innerHTML='<span class="pseq">'+p.seq+'</span>'
+        +'<span class="pmain"><span class="pname">'+esc(p.name)+'</span><span class="pcompany">'+esc(p.company||'—')+'</span></span>'
+        +statHtml+avgHtml;
+      row.addEventListener('click', function(){ openEditor(p.seq); });
+      list.appendChild(row);
+    });
+    $('#prog').innerHTML='You have locked <b>'+done+' of '+d.participants.length+'</b> participants. '
+      +'Numbers on the right show how many of '+d.nJudges+' judges have locked (or the panel average once all have).';
+  }
+
+  /* ---------- editor ---------- */
+  function openEditor(seq){
+    state.current=seq;
+    $('#listView').hidden=true; $('#editView').hidden=false; window.scrollTo(0,0);
+    renderEditor(seq);
+  }
+  $('#backBtn').addEventListener('click', function(){
+    state.current=null; $('#editView').hidden=true; $('#listView').hidden=false;
+  });
+
+  function renderEditor(seq){
+    var d=state.data;
+    var p=d.participants.filter(function(x){return x.seq===seq;})[0]; if(!p) return;
+    var mine=d.mine[seq];
+    var locked = mine && mine.locked;
+    var reopenable = d.reopenable.indexOf(seq)>=0;
+    var avg=d.average[seq];
+
+    $('#ehead').innerHTML='<div class="eseq">PARTICIPANT '+p.seq+' OF '+d.participants.length+'</div>'
+      +'<h2>'+esc(p.name)+'</h2><div class="eco">'+esc(p.company||'—')+'</div>';
+    $('#editMsg').innerHTML='';
+
+    // starting values: existing scores or zeros
+    var vals = (mine && mine.scores) ? mine.scores.slice() : d.criteria.map(function(){return 0;});
+    state.draft[seq] = state.draft[seq] || vals.slice();
+    if(mine && mine.scores) state.draft[seq]=mine.scores.slice();
+    var cur = state.draft[seq];
+
+    var wrap=$('#critWrap'); wrap.innerHTML='';
+    d.criteria.forEach(function(c,i){
+      var el=document.createElement('div'); el.className='crit';
+      el.innerHTML='<div class="clab"><span class="cname">'+esc(c.label)+'</span><span class="cmax">0–'+c.max+'</span></div>'
+        +'<div class="cdesc">'+esc(CRIT_DESC[c.label]||'')+'</div>'
+        +'<div class="stepper"><button type="button" data-d="-1">−</button>'
+        +'<input type="number" inputmode="numeric" min="0" max="'+c.max+'" value="'+cur[i]+'" data-i="'+i+'">'
+        +'<button type="button" data-d="1">+</button></div>';
+      var input=el.querySelector('input');
+      function setVal(v){ v=Math.max(0,Math.min(c.max,Math.round(v||0))); input.value=v; cur[i]=v; updateTotal(); }
+      el.querySelectorAll('button').forEach(function(b){ b.addEventListener('click', function(){ if(locked) return; setVal((parseInt(input.value,10)||0)+parseInt(b.dataset.d,10)); }); });
+      input.addEventListener('input', function(){ if(locked){ input.value=cur[i]; return; } setVal(parseInt(input.value,10)); });
+      input.disabled=locked;
+      wrap.appendChild(el);
+    });
+    updateTotal();
+
+    // badges + actions
+    var actions=$('#eactions'); actions.innerHTML='';
+    var pre='';
+    if(avg!=null){ pre+='<div class="avgbadge">Panel average (all '+d.nJudges+' judges locked): <b>'+avg+' / 100</b> · highest & lowest dropped.</div>'; }
+    if(locked){
+      pre+='<div class="lockbadge"><span>🔒 Your score is locked — total <b>'+mine.total+'</b>.</span></div>';
+    }
+    $('#critWrap').insertAdjacentHTML('beforebegin', ''); // no-op keep order
+    $('#editMsg').innerHTML=pre;
+
+    if(!locked){
+      var draftBtn=document.createElement('button'); draftBtn.className='btn ghost'; draftBtn.textContent='Save draft';
+      draftBtn.addEventListener('click', function(){ saveScore(seq, cur, false); });
+      var lockBtn=document.createElement('button'); lockBtn.className='btn'; lockBtn.textContent='Lock in score';
+      lockBtn.addEventListener('click', function(){
+        if(!confirm('Lock in '+total(cur)+'/100 for '+p.name+'? You can reopen it only while it is one of your last '+3+' locked.')) return;
+        saveScore(seq, cur, true);
+      });
+      actions.appendChild(draftBtn); actions.appendChild(lockBtn);
+    } else if(reopenable){
+      var reopen=document.createElement('button'); reopen.className='btn amber'; reopen.textContent='Reopen to edit';
+      reopen.addEventListener('click', function(){ reopenScore(seq); });
+      actions.appendChild(reopen);
+    } else {
+      var note=document.createElement('div'); note.style.cssText='font-size:12.5px;color:var(--muted);text-align:center;width:100%';
+      note.textContent='This score is locked and can no longer be changed (only your last 3 locked can be reopened).';
+      actions.appendChild(note);
+    }
+  }
+  function total(arr){ return arr.reduce(function(s,x){return s+(parseInt(x,10)||0);},0); }
+  function updateTotal(){ var seq=state.current; $('#totalVal').textContent = seq!=null ? total(state.draft[seq]||[]) : 0; }
+
+  function saveScore(seq, scores, lock){
+    setEditMsg('', 'Saving…');
+    post({action:'saveScore', token:state.token, seq:seq, scores:scores, lock:lock}).then(function(d){
+      if(d && d.ok){ delete state.draft[seq]; return refresh(false).then(function(){
+        if(lock){ // back to list after locking
+          state.current=null; $('#editView').hidden=true; $('#listView').hidden=false;
+          show('ok','Locked '+ (d.total!=null?d.total:'') +'/100. ✓');
+        } else { renderEditor(seq); setEditMsg('ok','Draft saved.'); }
+      }); }
+      else { setEditMsg('bad', (d&&d.error)||'Could not save.'); if(d&&/log in/i.test(d.error||'')) logout(); }
+    }).catch(function(){ setEditMsg('bad','Could not reach the server. Try again.'); });
+  }
+  function reopenScore(seq){
+    post({action:'reopenScore', token:state.token, seq:seq}).then(function(d){
+      if(d && d.ok){ refresh(false).then(function(){ renderEditor(seq); setEditMsg('ok','Reopened — make your changes and lock again.'); }); }
+      else setEditMsg('bad',(d&&d.error)||'Could not reopen.');
+    }).catch(function(){ setEditMsg('bad','Could not reach the server.'); });
+  }
+  function setEditMsg(kind, text){
+    var m=$('#editMsg');
+    var extra = kind ? '<div class="msg '+kind+'" style="display:block">'+esc(text)+'</div>' : (text?'<div class="prog">'+esc(text)+'</div>':'');
+    // keep any badges already rendered above by re-rendering editor is heavy; just prepend a transient line
+    var host=document.createElement('div'); host.innerHTML=extra;
+    // remove previous transient
+    var prev=document.getElementById('_transient'); if(prev) prev.remove();
+    if(extra){ host.firstChild.id='_transient'; m.appendChild(host.firstChild); }
+  }
+
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+  /* ---------- boot ---------- */
+  loadJudgeNames();
+  try{
+    var saved=localStorage.getItem('cye_judge_token');
+    if(saved){ state.token=saved; // verify by loading data
+      post({action:'judgeData', token:saved}).then(function(d){
+        if(d && d.ok){ state.name=d.name; enterApp(); }
+      }).catch(function(){});
+    }
+  }catch(e){}
+})();
+</script>
+</body>
+</html>

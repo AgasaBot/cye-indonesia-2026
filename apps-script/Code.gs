@@ -240,6 +240,14 @@ function doPost(e) {
       return handlePendingList_(data);
     }
 
+    // (0d) Semifinal judge scoring tool (see the JUDGING section below).
+    if (data.action === 'judgeNames')   return handleJudgeNames_();
+    if (data.action === 'judgeLogin')   return handleJudgeLogin_(data);
+    if (data.action === 'judgeData')    return handleJudgeData_(data);
+    if (data.action === 'saveScore')    return handleSaveScore_(data);
+    if (data.action === 'reopenScore')  return handleReopenScore_(data);
+    if (data.action === 'adminScores')  return handleAdminScores_(data);
+
     // (1) Midtrans server-to-server payment notification (webhook)
     if (data.transaction_status && data.signature_key) {
       return handleNotification_(data);
@@ -462,4 +470,298 @@ function notifyOrganizer_(d, fileUrls, amount) {
 
 function json_(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}
+
+/* =====================================================================
+ * SEMIFINAL JUDGE SCORING TOOL
+ * ---------------------------------------------------------------------
+ * Judges log in (name + password from the "Judges" tab), score each
+ * semifinalist across the 5 criteria (total /100), and lock each score.
+ * A judge may reopen only their 3 most-recently-locked scores. Once all
+ * active judges have locked a participant, its average = drop the highest
+ * and lowest total, then average the rest (with 6 judges, the middle 4).
+ * All data lives in the same spreadsheet: tabs "Judges", "Semifinalists",
+ * "Scores". Run setupJudging() ONCE from the editor to create/seed them.
+ * =================================================================== */
+
+const JUDGE_CRITERIA = [
+  { key: 'impact',       label: 'Community & Social Impact',         max: 15 },
+  { key: 'business',     label: 'Business & International Impact',    max: 25 },
+  { key: 'innovation',   label: 'Innovation & Originality',          max: 20 },
+  { key: 'leadership',   label: 'Leadership Ability',                max: 20 },
+  { key: 'presentation', label: 'Clarity & Quality of Presentation', max: 20 }
+];
+const JUDGES_SHEET = 'Judges';
+const SEMIS_SHEET  = 'Semifinalists';
+const SCORES_SHEET = 'Scores';
+const REOPEN_WINDOW = 3; // a judge can reopen their N most-recently-locked scores
+
+function ssBook_() {
+  return SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
+}
+
+/* ---- auth: token binds a judge name to a server secret ---- */
+function judgeToken_(name) {
+  const secret = PropertiesService.getScriptProperties().getProperty('JUDGE_SECRET') || 'cye-2026-judging';
+  const sig = Utilities.computeHmacSha256Signature(String(name), secret);
+  const hex = sig.map(function (b) { b = (b < 0) ? b + 256 : b; return ('0' + b.toString(16)).slice(-2); }).join('');
+  return String(name) + '|' + hex.slice(0, 24);
+}
+function judgeFromToken_(token) {
+  token = String(token || '');
+  const i = token.lastIndexOf('|');
+  if (i < 1) return '';
+  const name = token.slice(0, i);
+  return (judgeToken_(name) === token) ? name : '';
+}
+
+/* ---- data readers ---- */
+function getJudges_() {
+  const sh = ssBook_().getSheetByName(JUDGES_SHEET);
+  if (!sh || sh.getLastRow() < 2) return [];
+  const v = sh.getDataRange().getValues();
+  const head = v[0];
+  const cN = head.indexOf('Name'), cP = head.indexOf('Password'), cA = head.indexOf('Active');
+  const out = [];
+  for (var i = 1; i < v.length; i++) {
+    var name = String(v[i][cN] || '').trim();
+    if (!name) continue;
+    var act = cA < 0 ? true : (String(v[i][cA]).toUpperCase().indexOf('FALSE') < 0 && String(v[i][cA]).toUpperCase().indexOf('NO') !== 0);
+    out.push({ name: name, password: String(v[i][cP] || ''), active: act });
+  }
+  return out;
+}
+
+function getSemifinalists_() {
+  const sh = ssBook_().getSheetByName(SEMIS_SHEET);
+  if (!sh || sh.getLastRow() < 2) return [];
+  const v = sh.getDataRange().getValues();
+  const head = v[0];
+  const cS = head.indexOf('Seq'), cN = head.indexOf('Name'), cC = head.indexOf('Company');
+  const out = [];
+  for (var i = 1; i < v.length; i++) {
+    var name = String(v[i][cN] || '').trim();
+    if (!name) continue;
+    out.push({ seq: Number(v[i][cS]) || i, name: name, company: String(v[i][cC] || '').trim() });
+  }
+  out.sort(function (a, b) { return a.seq - b.seq; });
+  return out;
+}
+
+function getScoresSheet_() {
+  const ss = ssBook_();
+  const headers = ['Judge', 'Seq', 'Participant']
+    .concat(JUDGE_CRITERIA.map(function (c) { return c.label + ' /' + c.max; }))
+    .concat(['Total', 'Locked', 'Locked at']);
+  let sh = ss.getSheetByName(SCORES_SHEET);
+  if (!sh) sh = ss.insertSheet(SCORES_SHEET);
+  if (sh.getLastRow() === 0) { sh.getRange(1, 1, 1, headers.length).setValues([headers]); sh.setFrozenRows(1); }
+  return sh;
+}
+
+function readScores_() {
+  const sh = getScoresSheet_();
+  if (sh.getLastRow() < 2) return [];
+  const v = sh.getDataRange().getValues();
+  const nC = JUDGE_CRITERIA.length;
+  const out = [];
+  for (var i = 1; i < v.length; i++) {
+    var judge = String(v[i][0] || '').trim();
+    if (!judge) continue;
+    var scores = [];
+    for (var k = 0; k < nC; k++) scores.push(Number(v[i][3 + k]) || 0);
+    var lockedCell = v[i][3 + nC + 1];
+    out.push({
+      row: i + 1, judge: judge, seq: Number(v[i][1]) || 0, participant: String(v[i][2] || ''),
+      scores: scores, total: Number(v[i][3 + nC]) || 0,
+      locked: (lockedCell === true || String(lockedCell).toUpperCase() === 'TRUE'),
+      lockedAt: v[i][3 + nC + 2] ? new Date(v[i][3 + nC + 2]).getTime() : 0
+    });
+  }
+  return out;
+}
+
+function trimmedMean_(totals) {
+  if (!totals || !totals.length) return null;
+  const a = totals.slice().sort(function (x, y) { return x - y; });
+  if (a.length > 2) { a.shift(); a.pop(); } // drop one lowest + one highest
+  const sum = a.reduce(function (s, x) { return s + x; }, 0);
+  return Math.round((sum / a.length) * 100) / 100;
+}
+
+/* ---- handlers ---- */
+function handleJudgeNames_() {
+  return json_({ ok: true, judges: getJudges_().filter(function (j) { return j.active; }).map(function (j) { return j.name; }) });
+}
+
+function handleJudgeLogin_(data) {
+  const name = String(data.name || '').trim();
+  const pass = String(data.password || '');
+  const j = getJudges_().filter(function (x) { return x.active && x.name.toLowerCase() === name.toLowerCase(); })[0];
+  if (!j || String(j.password) !== pass) return json_({ ok: false, error: 'Wrong name or password.' });
+  return json_({ ok: true, token: judgeToken_(j.name), name: j.name });
+}
+
+function handleJudgeData_(data) {
+  const name = judgeFromToken_(data.token);
+  if (!name) return json_({ ok: false, error: 'Session expired — please log in again.' });
+  const semis = getSemifinalists_();
+  const nJudges = getJudges_().filter(function (j) { return j.active; }).length;
+  const all = readScores_();
+
+  const mine = {};
+  all.filter(function (s) { return s.judge === name; }).forEach(function (s) {
+    mine[s.seq] = { scores: s.scores, total: s.total, locked: s.locked };
+  });
+  const myLocked = all.filter(function (s) { return s.judge === name && s.locked; })
+    .sort(function (a, b) { return b.lockedAt - a.lockedAt; });
+  const reopenable = myLocked.slice(0, REOPEN_WINDOW).map(function (s) { return s.seq; });
+
+  const bySeq = {};
+  all.filter(function (s) { return s.locked; }).forEach(function (s) { (bySeq[s.seq] = bySeq[s.seq] || []).push(s.total); });
+  const lockCount = {}, average = {};
+  semis.forEach(function (p) {
+    var totals = bySeq[p.seq] || [];
+    lockCount[p.seq] = totals.length;
+    average[p.seq] = (nJudges >= 3 && totals.length >= nJudges) ? trimmedMean_(totals) : null;
+  });
+
+  return json_({ ok: true, name: name, nJudges: nJudges, criteria: JUDGE_CRITERIA,
+    participants: semis, mine: mine, reopenable: reopenable, lockCount: lockCount, average: average });
+}
+
+function handleSaveScore_(data) {
+  const name = judgeFromToken_(data.token);
+  if (!name) return json_({ ok: false, error: 'Session expired — please log in again.' });
+  const seq = Number(data.seq);
+  const p = getSemifinalists_().filter(function (x) { return x.seq === seq; })[0];
+  if (!p) return json_({ ok: false, error: 'Unknown participant.' });
+  const lock = !!data.lock;
+
+  const lk = LockService.getScriptLock(); lk.waitLock(20000);
+  try {
+    const sh = getScoresSheet_();
+    const existing = readScores_().filter(function (s) { return s.judge === name && s.seq === seq; })[0];
+    if (existing && existing.locked) return json_({ ok: false, error: 'That score is locked — reopen it first.' });
+
+    const nC = JUDGE_CRITERIA.length;
+    const scores = []; var total = 0;
+    for (var k = 0; k < nC; k++) {
+      var val = Math.round(Number((data.scores || [])[k]) || 0);
+      val = Math.max(0, Math.min(JUDGE_CRITERIA[k].max, val));
+      scores.push(val); total += val;
+    }
+    const rowVals = [name, seq, p.name + (p.company ? (' — ' + p.company) : '')]
+      .concat(scores).concat([total, lock, lock ? new Date() : '']);
+    if (existing) sh.getRange(existing.row, 1, 1, rowVals.length).setValues([rowVals]);
+    else sh.getRange(sh.getLastRow() + 1, 1, 1, rowVals.length).setValues([rowVals]);
+    return json_({ ok: true, locked: lock, total: total });
+  } finally { lk.releaseLock(); }
+}
+
+function handleReopenScore_(data) {
+  const name = judgeFromToken_(data.token);
+  if (!name) return json_({ ok: false, error: 'Session expired — please log in again.' });
+  const seq = Number(data.seq);
+  const lk = LockService.getScriptLock(); lk.waitLock(20000);
+  try {
+    const sh = getScoresSheet_();
+    const myLocked = readScores_().filter(function (s) { return s.judge === name && s.locked; })
+      .sort(function (a, b) { return b.lockedAt - a.lockedAt; });
+    const win = myLocked.slice(0, REOPEN_WINDOW).map(function (s) { return s.seq; });
+    if (win.indexOf(seq) < 0) return json_({ ok: false, error: 'Only your ' + REOPEN_WINDOW + ' most-recently-locked scores can be reopened.' });
+    const target = myLocked.filter(function (s) { return s.seq === seq; })[0];
+    const nC = JUDGE_CRITERIA.length;
+    sh.getRange(target.row, 3 + nC + 2).setValue('');    // Locked at
+    sh.getRange(target.row, 3 + nC + 1).setValue(false); // Locked
+    return json_({ ok: true });
+  } finally { lk.releaseLock(); }
+}
+
+function handleAdminScores_(data) {
+  const pass = PropertiesService.getScriptProperties().getProperty('ADMIN_PASSCODE') || '';
+  if (!pass) return json_({ ok: false, error: 'Server not set up: ADMIN_PASSCODE is missing.' });
+  if (String(data.passcode || '') !== pass) return json_({ ok: false, error: 'Wrong passcode.' });
+  const semis = getSemifinalists_();
+  const judges = getJudges_().filter(function (j) { return j.active; }).map(function (j) { return j.name; });
+  const nJudges = judges.length;
+  const all = readScores_();
+  const rows = semis.map(function (p) {
+    var perJudge = judges.map(function (jn) {
+      var s = all.filter(function (x) { return x.judge === jn && x.seq === p.seq; })[0];
+      return s ? { judge: jn, total: s.total, locked: s.locked, scores: s.scores }
+               : { judge: jn, total: null, locked: false, scores: null };
+    });
+    var lockedTotals = perJudge.filter(function (x) { return x.locked && x.total != null; }).map(function (x) { return x.total; });
+    var avg = (nJudges >= 3 && lockedTotals.length >= nJudges) ? trimmedMean_(lockedTotals) : null;
+    return { seq: p.seq, name: p.name, company: p.company, perJudge: perJudge, locks: lockedTotals.length, average: avg };
+  });
+  return json_({ ok: true, judges: judges, nJudges: nJudges, criteria: JUDGE_CRITERIA, rows: rows });
+}
+
+/* ---- one-time setup: run setupJudging() from the editor after deploy ----
+ * Creates the three tabs and seeds Judges (6) + Semifinalists (20 in
+ * presentation order, company matched from Registrations). Safe to re-run:
+ * it only seeds a tab that has no data rows yet, so it never clobbers edits. */
+function setupJudging() {
+  const ss = ssBook_();
+  const log = [];
+
+  // Judges
+  var js = ss.getSheetByName(JUDGES_SHEET) || ss.insertSheet(JUDGES_SHEET);
+  if (js.getLastRow() < 2) {
+    var judgeRows = [
+      ['Rico Tedyono', 'Rico-7F2K', true],
+      ['Darwin Tjoe', 'Darwin-3QX', true],
+      ['Imelda Lim', 'Imelda-9M4', true],
+      ['Natali Ardianto', 'Natali-2ZP', true],
+      ['Dr. Anggara Hayun Anujuprana', 'Anggara-6T5', true],
+      ['Steven', 'Steven-8W9', true]
+    ];
+    js.clear();
+    js.getRange(1, 1, 1, 3).setValues([['Name', 'Password', 'Active']]);
+    js.getRange(2, 1, judgeRows.length, 3).setValues(judgeRows);
+    js.setFrozenRows(1);
+    log.push('Judges: seeded ' + judgeRows.length);
+  } else { log.push('Judges: already has data, left as-is'); }
+
+  // Semifinalists (presentation order) + company match from Registrations
+  var names = [
+    'Al Fath Nuur Rochman', 'Nadia Nathania', 'Alpvy Ramadhan', 'Clarabelle Laura Suhandinata',
+    'Yessi Calissa', 'Salsabilla Mazaya Ramadhani', 'Fahrizal Maulana', 'Saivya Chauhan',
+    'Gilbert Xervaxius Naphan', 'Arvega Andika Putra', 'Sidhi Umbara', 'Anastasia Laura Widjaja',
+    'Felicia Magdalena Limantoro', 'Bobby Yulandika Putra', 'Victor Osman', 'Ramzi Putera Faisal',
+    'Joshua William', 'Redha Bhawika Putra', 'ilham pinastiko', 'Fielien Kosasih'
+  ];
+  var semis = ss.getSheetByName(SEMIS_SHEET) || ss.insertSheet(SEMIS_SHEET);
+  if (semis.getLastRow() < 2) {
+    // build a name->business map from Registrations
+    var reg = getSheet_().getDataRange().getValues();
+    var rh = reg[0], rcN = rh.indexOf('Full name'), rcB = rh.indexOf('Business');
+    var norm = function (s) { return String(s || '').toLowerCase().replace(/\s+/g, ' ').trim(); };
+    var bizByName = {};
+    for (var r = 1; r < reg.length; r++) { var nm = norm(reg[r][rcN]); if (nm) bizByName[nm] = String(reg[r][rcB] || ''); }
+    var rows = [], matched = 0;
+    names.forEach(function (nm, idx) {
+      var biz = bizByName[norm(nm)] || '';
+      if (biz) matched++;
+      rows.push([idx + 1, nm, biz]);
+    });
+    semis.clear();
+    semis.getRange(1, 1, 1, 3).setValues([['Seq', 'Name', 'Company']]);
+    semis.getRange(2, 1, rows.length, 3).setValues(rows);
+    semis.setFrozenRows(1);
+    log.push('Semifinalists: seeded ' + rows.length + ', companies matched ' + matched + '/' + rows.length);
+  } else { log.push('Semifinalists: already has data, left as-is'); }
+
+  getScoresSheet_(); // ensure Scores tab + headers exist
+  log.push('Scores tab ready');
+
+  // set a token secret if not present
+  var props = PropertiesService.getScriptProperties();
+  if (!props.getProperty('JUDGE_SECRET')) props.setProperty('JUDGE_SECRET', Utilities.getUuid());
+  log.push('JUDGE_SECRET ok');
+
+  Logger.log(log.join('\n'));
+  return log.join('\n');
 }

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scores dashboard — CYE Indonesia 2026 (Admin)</title>
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#0a0f29">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#0a0f29; --navy-2:#121a3f; --teal:#72d9bf; --teal-deep:#159a78;
+    --teal-light:#a9e7d4; --mist:#e7f6f1; --mist-2:#f2fbf8; --white:#fefefe;
+    --muted:#5d6b88; --line:rgba(14,26,60,.12); --err:#d23a57;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--navy);color:var(--navy);
+    line-height:1.5;-webkit-font-smoothing:antialiased;padding:18px 14px 50px}
+  .wrap{max-width:1100px;margin:0 auto}
+  .card{background:var(--white);border-radius:18px;overflow:hidden;box-shadow:0 24px 60px -20px rgba(0,0,0,.5)}
+  .hd{background:var(--navy);color:#fff;padding:20px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .hd .kicker{font-size:11px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--teal)}
+  .hd h1{font-family:'Montserrat',sans-serif;font-weight:800;font-size:20px;margin-top:3px}
+  .hd .meta{font-size:12.5px;color:#c9d5ec;text-align:right}
+  .bd{padding:18px 22px 24px}
+  label{font-size:12.5px;font-weight:600;display:block;margin-bottom:5px}
+  input{font-family:inherit;font-size:15px;border:1.5px solid var(--line);border-radius:10px;padding:11px 12px;width:100%}
+  input:focus{outline:none;border-color:var(--teal-deep)}
+  .btn{font-family:'Montserrat',sans-serif;font-weight:800;font-size:14.5px;background:var(--teal);color:var(--navy);
+    border:none;border-radius:11px;padding:11px 18px;cursor:pointer}
+  .btn:hover{filter:brightness(1.05)} .btn.ghost{background:#fff;color:var(--teal-deep);box-shadow:inset 0 0 0 1.5px var(--teal-deep)}
+  .msg{border-radius:10px;padding:11px 13px;font-size:13px;font-weight:500;margin-bottom:12px;display:none}
+  .msg.bad{display:block;background:#fdeef1;color:var(--err);border:1px solid #f2b8c4}
+  .toolbar{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:14px;font-size:13px;color:var(--muted)}
+  .toolbar .sp{flex:1}
+  .summary{font-size:13.5px;color:var(--navy);margin-bottom:12px}
+  .summary b{font-family:'Montserrat',sans-serif}
+  .tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+  table{border-collapse:collapse;width:100%;font-size:13px;min-width:760px}
+  th,td{padding:9px 10px;text-align:center;border-bottom:1px solid var(--line);white-space:nowrap}
+  th{background:var(--mist-2);font-family:'Montserrat',sans-serif;font-weight:700;font-size:11.5px;color:var(--navy);
+    position:sticky;top:0;text-transform:uppercase;letter-spacing:.03em}
+  td.name,th.name{text-align:left;white-space:normal;min-width:170px}
+  td.seq,th.seq{width:34px}
+  .nm{font-weight:700} .co{font-size:11.5px;color:var(--muted)}
+  .jt{font-variant-numeric:tabular-nums}
+  .jt.unlocked{color:#b0b8c6} .jt.none{color:#d2d7df}
+  .jt.hi{background:#eaf7f1;border-radius:6px;font-weight:700}
+  .jt.lo{background:#fdeef1;border-radius:6px;font-weight:700}
+  .avg{font-family:'Montserrat',sans-serif;font-weight:800;font-size:14px}
+  .avg.pending{color:#c3cad8;font-weight:600;font-family:'Inter',sans-serif;font-size:12px}
+  .rank{display:inline-block;min-width:22px;font-family:'Montserrat',sans-serif;font-weight:800}
+  .rank.top{color:var(--teal-deep)}
+  tr.prow{cursor:pointer} tr.prow:hover td{background:var(--mist-2)}
+  .detail td{background:#fbfdff;text-align:left;padding:0}
+  .dinner{padding:10px 14px}
+  .dtable{min-width:0;width:auto;font-size:12px}
+  .dtable th,.dtable td{border:none;padding:4px 10px;text-align:center}
+  .dtable td.dj{text-align:left;font-weight:600}
+  .legend{font-size:11.5px;color:var(--muted);margin-top:10px}
+  .legend .hi{background:#eaf7f1;padding:1px 6px;border-radius:5px}
+  .legend .lo{background:#fdeef1;padding:1px 6px;border-radius:5px}
+  [hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="card">
+    <header class="hd">
+      <div><div class="kicker">CYE 2026 · Semifinal</div><h1>Scores dashboard</h1></div>
+      <div class="meta" id="meta" hidden></div>
+    </header>
+    <div class="bd">
+      <div id="msg" class="msg"></div>
+
+      <div id="loginView">
+        <div style="max-width:340px">
+          <label>Admin passcode</label>
+          <input type="password" id="pass" autocomplete="off" placeholder="Same passcode as /admin">
+          <div style="height:12px"></div>
+          <button class="btn" id="loginBtn">Open dashboard →</button>
+        </div>
+      </div>
+
+      <div id="dash" hidden>
+        <div class="summary" id="summary"></div>
+        <div class="toolbar">
+          <label style="display:flex;align-items:center;gap:7px;margin:0;font-weight:600;color:var(--navy)">
+            <input type="checkbox" id="sortAvg" style="width:auto"> Sort by average (ranking)</label>
+          <label style="display:flex;align-items:center;gap:7px;margin:0;font-weight:600;color:var(--navy)">
+            <input type="checkbox" id="autoref" checked style="width:auto"> Auto-refresh</label>
+          <span class="sp"></span>
+          <button class="btn ghost" id="refreshBtn">Refresh</button>
+        </div>
+        <div class="tablewrap"><table id="tbl"></table></div>
+        <div class="legend">Average = each judge's total, drop the <span class="hi">highest</span> &amp; <span class="lo">lowest</span>, average the rest (with all 6 judges, the middle 4). It appears only once every judge has locked that participant. Tap a row for the per-criterion breakdown.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var ENDPOINT = 'https://script.google.com/macros/s/AKfycbwY5zaPSyDHNjbjvBsBUbMrjWd_mMPWyywfEFBIFtsgkmodhG8D9gxC9dGezsCf6iwN/exec';
+  var $=function(s){return document.querySelector(s);};
+  var msg=$('#msg'); var state={pass:null,data:null,expanded:{},timer:null};
+  function show(t){ msg.className='msg bad'; msg.textContent=t; } function clr(){ msg.className='msg'; msg.textContent=''; }
+  function post(b){ return fetch(ENDPOINT,{method:'POST',body:JSON.stringify(b)}).then(function(r){return r.json();}); }
+  function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+
+  try{ var sv=localStorage.getItem('cye_admin_pass'); if(sv) $('#pass').value=sv; }catch(e){}
+
+  $('#loginBtn').addEventListener('click', function(){
+    clr(); var p=$('#pass').value.trim(); if(!p){ show('Enter the passcode.'); return; }
+    var b=$('#loginBtn'); b.disabled=true; b.textContent='Opening…';
+    load(p).then(function(ok){
+      if(ok){ state.pass=p; try{localStorage.setItem('cye_admin_pass',p);}catch(e){}
+        $('#loginView').hidden=true; $('#dash').hidden=false; $('#meta').hidden=false; startAuto(); }
+    }).finally(function(){ b.disabled=false; b.textContent='Open dashboard →'; });
+  });
+  $('#pass').addEventListener('keydown',function(e){ if(e.key==='Enter') $('#loginBtn').click(); });
+
+  function load(pass){
+    return post({action:'adminScores', passcode:pass}).then(function(d){
+      if(d && d.ok){ state.data=d; render(); return true; }
+      show((d&&d.error)||'Could not load.'); return false;
+    }).catch(function(){ show('Could not reach the server.'); return false; });
+  }
+
+  $('#refreshBtn').addEventListener('click', function(){ if(state.pass) load(state.pass); });
+  $('#sortAvg').addEventListener('change', render);
+  $('#autoref').addEventListener('change', startAuto);
+  function startAuto(){ if(state.timer) clearInterval(state.timer); if($('#autoref').checked){ state.timer=setInterval(function(){ if(state.pass) load(state.pass); },15000); } }
+
+  function render(){
+    var d=state.data; if(!d) return;
+    var finalized=d.rows.filter(function(r){return r.average!=null;}).length;
+    $('#summary').innerHTML='<b>'+finalized+' of '+d.rows.length+'</b> participants finalized (all '+d.nJudges+' judges locked). '
+      + d.judges.length+' judges: '+d.judges.map(esc).join(', ')+'.';
+    $('#meta').innerHTML='Updated '+new Date().toLocaleTimeString();
+
+    // ranking by average
+    var ranked=d.rows.filter(function(r){return r.average!=null;}).slice().sort(function(a,b){return b.average-a.average;});
+    var rankOf={}; ranked.forEach(function(r,i){ rankOf[r.seq]=i+1; });
+
+    var rows=d.rows.slice();
+    if($('#sortAvg').checked){ rows.sort(function(a,b){ var av=a.average==null?-1:a.average, bv=b.average==null?-1:b.average; return bv-av; }); }
+
+    var head='<tr><th class="seq">#</th><th class="name">Participant</th>'
+      + d.judges.map(function(j){ return '<th title="'+esc(j)+'">'+esc(shortName(j))+'</th>'; }).join('')
+      + '<th>Locks</th><th>Average</th><th>Rank</th></tr>';
+    var body=rows.map(function(r){
+      // determine hi/lo among locked totals for shading (only when finalized)
+      var locked=r.perJudge.filter(function(x){return x.locked&&x.total!=null;}).map(function(x){return x.total;});
+      var hi=r.average!=null?Math.max.apply(null,locked):null, lo=r.average!=null?Math.min.apply(null,locked):null;
+      var hiUsed=false, loUsed=false;
+      var cells=r.perJudge.map(function(x){
+        if(x.total==null) return '<td class="jt none">–</td>';
+        var cls='jt'+(x.locked?'':' unlocked');
+        if(r.average!=null){ if(!hiUsed&&x.total===hi){cls+=' hi';hiUsed=true;} else if(!loUsed&&x.total===lo){cls+=' lo';loUsed=true;} }
+        return '<td class="'+cls+'" title="'+(x.locked?'locked':'draft/unlocked')+'">'+x.total+'</td>';
+      }).join('');
+      var avgHtml = r.average!=null ? '<span class="avg">'+r.average+'</span>' : '<span class="avg pending">'+r.locks+'/'+d.nJudges+'</span>';
+      var rk = rankOf[r.seq] ? '<span class="rank'+(rankOf[r.seq]<=4?' top':'')+'">'+rankOf[r.seq]+'</span>' : '<span class="rank" style="color:#d2d7df">–</span>';
+      var main='<tr class="prow" data-seq="'+r.seq+'"><td class="seq">'+r.seq+'</td>'
+        +'<td class="name"><div class="nm">'+esc(r.name)+'</div><div class="co">'+esc(r.company||'—')+'</div></td>'
+        +cells+'<td>'+r.locks+'/'+d.nJudges+'</td><td>'+avgHtml+'</td><td>'+rk+'</td></tr>';
+      var detail = state.expanded[r.seq] ? detailRow(r,d) : '';
+      return main+detail;
+    }).join('');
+    $('#tbl').innerHTML=head+body;
+    Array.prototype.forEach.call(document.querySelectorAll('tr.prow'), function(tr){
+      tr.addEventListener('click', function(){ var s=tr.dataset.seq; state.expanded[s]=!state.expanded[s]; render(); });
+    });
+  }
+
+  function detailRow(r,d){
+    var colspan=3+d.judges.length+3;
+    var head='<tr><th class="dj" style="text-align:left">Judge</th>'+d.criteria.map(function(c){return '<th>'+esc(abbr(c.label))+'<br><small>/'+c.max+'</small></th>';}).join('')+'<th>Total</th></tr>';
+    var body=r.perJudge.map(function(x){
+      var cells;
+      if(x.scores){ cells=x.scores.map(function(v){return '<td>'+v+'</td>';}).join('')+'<td><b>'+x.total+'</b></td>'; }
+      else { cells=d.criteria.map(function(){return '<td>–</td>';}).join('')+'<td>–</td>'; }
+      return '<tr><td class="dj">'+esc(x.judge)+(x.locked?' 🔒':(x.scores?' ·draft':''))+'</td>'+cells+'</tr>';
+    }).join('');
+    return '<tr class="detail"><td colspan="'+colspan+'"><div class="dinner"><table class="dtable">'+head+body+'</table></div></td></tr>';
+  }
+  function shortName(n){ var p=n.split(' '); return p.length>1 ? p[0]+' '+p[1][0]+'.' : n; }
+  function abbr(l){ return l.replace('Community & Social ','').replace('Business & International ','Business ').replace(' & Originality','').replace('Clarity & Quality of ','').replace(' Ability',''); }
+})();
+</script>
+</body>
+</html>
