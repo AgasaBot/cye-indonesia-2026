@@ -220,6 +220,19 @@ function handlePendingList_(data) {
 }
 
 function doPost(e) {
+  // Judge-tool + read-only admin actions skip the global lock: reads don't need it, and the two
+  // writers (saveScore / reopenScore) take the lock themselves for their short write. Holding one
+  // lock around every request made all judges' refreshes and saves queue up single-file.
+  var early = null;
+  try { early = JSON.parse(e.postData.contents); } catch (x) {}
+  var FAST = { judgeNames: handleJudgeNames_, judgeLogin: handleJudgeLogin_, judgeData: handleJudgeData_,
+               saveScore: handleSaveScore_, reopenScore: handleReopenScore_, adminScores: handleAdminScores_,
+               pendingList: handlePendingList_ };
+  if (early && early.action && Object.prototype.hasOwnProperty.call(FAST, early.action)) {
+    try { return FAST[early.action](early); }
+    catch (err) { return json_({ ok: false, error: String((err && err.message) || err) }); }
+  }
+
   const lock = LockService.getScriptLock();
   lock.waitLock(30000); // avoid two submissions clobbering the same row
   try {
@@ -235,18 +248,7 @@ function doPost(e) {
       return handleManualFiles_(data);
     }
 
-    // (0c) Admin: list of participants who still owe submission files.
-    if (data.action === 'pendingList') {
-      return handlePendingList_(data);
-    }
-
-    // (0d) Semifinal judge scoring tool (see the JUDGING section below).
-    if (data.action === 'judgeNames')   return handleJudgeNames_();
-    if (data.action === 'judgeLogin')   return handleJudgeLogin_(data);
-    if (data.action === 'judgeData')    return handleJudgeData_(data);
-    if (data.action === 'saveScore')    return handleSaveScore_(data);
-    if (data.action === 'reopenScore')  return handleReopenScore_(data);
-    if (data.action === 'adminScores')  return handleAdminScores_(data);
+    // (0c/0d) pendingList and the judge-tool actions are dispatched above, before the lock.
 
     // (1) Midtrans server-to-server payment notification (webhook)
     if (data.transaction_status && data.signature_key) {
@@ -514,9 +516,25 @@ const SEMIFINALIST_NAMES = [
   'Joshua William', 'Redha Bhawika Putra', 'ilham pinastiko', 'Fielien Kosasih'
 ];
 
+// Opened once per request (each web-app call is its own execution) instead of on every tab read.
+var SS_BOOK_ = null;
 function ssBook_() {
-  return SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
+  if (!SS_BOOK_) SS_BOOK_ = SPREADSHEET_ID ? SpreadsheetApp.openById(SPREADSHEET_ID) : SpreadsheetApp.getActiveSpreadsheet();
+  return SS_BOOK_;
 }
+
+// Judges + Semifinalists barely change, yet every refresh/save re-read them from the sheet.
+// Cache them for 30s (edits to those tabs show up within 30 seconds).
+function cachedRead_(key, fn) {
+  const c = CacheService.getScriptCache();
+  const hit = c.get(key);
+  if (hit) { try { return JSON.parse(hit); } catch (e) {} }
+  const val = fn();
+  try { c.put(key, JSON.stringify(val), 30); } catch (e) {}
+  return val;
+}
+function judgesCached_() { return cachedRead_('cye_judges_v1', getJudges_); }
+function semisCached_()  { return cachedRead_('cye_semis_v1', getSemifinalists_); }
 
 /* ---- auth: token binds a judge name to a server secret ---- */
 function judgeToken_(name) {
@@ -630,13 +648,13 @@ function trimmedMean_(totals) {
 
 /* ---- handlers ---- */
 function handleJudgeNames_() {
-  return json_({ ok: true, judges: getJudges_().filter(function (j) { return j.active; }).map(function (j) { return j.name; }) });
+  return json_({ ok: true, judges: judgesCached_().filter(function (j) { return j.active; }).map(function (j) { return j.name; }) });
 }
 
 function handleJudgeLogin_(data) {
   const name = String(data.name || '').trim();
   const pass = String(data.password || '');
-  const j = getJudges_().filter(function (x) { return x.active && x.name.toLowerCase() === name.toLowerCase(); })[0];
+  const j = judgesCached_().filter(function (x) { return x.active && x.name.toLowerCase() === name.toLowerCase(); })[0];
   if (!j || String(j.password) !== pass) return json_({ ok: false, error: 'Wrong name or password.' });
   return json_({ ok: true, token: judgeToken_(j.name), name: j.name });
 }
@@ -644,8 +662,8 @@ function handleJudgeLogin_(data) {
 function handleJudgeData_(data) {
   const name = judgeFromToken_(data.token);
   if (!name) return json_({ ok: false, error: 'Session expired — please log in again.' });
-  const semis = getSemifinalists_();
-  const nJudges = getJudges_().filter(function (j) { return j.active; }).length;
+  const semis = semisCached_();
+  const nJudges = judgesCached_().filter(function (j) { return j.active; }).length;
   const all = readScores_();
 
   const mine = {};
@@ -673,7 +691,7 @@ function handleSaveScore_(data) {
   const name = judgeFromToken_(data.token);
   if (!name) return json_({ ok: false, error: 'Session expired — please log in again.' });
   const seq = Number(data.seq);
-  const p = getSemifinalists_().filter(function (x) { return x.seq === seq; })[0];
+  const p = semisCached_().filter(function (x) { return x.seq === seq; })[0];
   if (!p) return json_({ ok: false, error: 'Unknown participant.' });
   const lock = !!data.lock;
 
@@ -711,8 +729,10 @@ function handleReopenScore_(data) {
     if (win.indexOf(seq) < 0) return json_({ ok: false, error: 'Only your ' + REOPEN_WINDOW + ' most-recently-locked scores can be reopened.' });
     const target = myLocked.filter(function (s) { return s.seq === seq; })[0];
     const nC = JUDGE_CRITERIA.length;
-    sh.getRange(target.row, 3 + nC + 2).setValue('');    // Locked at
-    sh.getRange(target.row, 3 + nC + 1).setValue(false); // Locked
+    // 1-based columns: Judge=1, Seq=2, Participant=3, criteria=4..3+nC, Total=3+nC+1, Locked=3+nC+2, Locked at=3+nC+3
+    // (this used to write false into Total and '' into Locked — zeroing the judge's total on every reopen)
+    sh.getRange(target.row, 3 + nC + 2).setValue(false); // Locked
+    sh.getRange(target.row, 3 + nC + 3).setValue('');    // Locked at
     return json_({ ok: true });
   } finally { lk.releaseLock(); }
 }
@@ -721,8 +741,8 @@ function handleAdminScores_(data) {
   const pass = PropertiesService.getScriptProperties().getProperty('ADMIN_PASSCODE') || '';
   if (!pass) return json_({ ok: false, error: 'Server not set up: ADMIN_PASSCODE is missing.' });
   if (String(data.passcode || '') !== pass) return json_({ ok: false, error: 'Wrong passcode.' });
-  const semis = getSemifinalists_();
-  const judges = getJudges_().filter(function (j) { return j.active; }).map(function (j) { return j.name; });
+  const semis = semisCached_();
+  const judges = judgesCached_().filter(function (j) { return j.active; }).map(function (j) { return j.name; });
   const nJudges = judges.length;
   const all = readScores_();
   const rows = semis.map(function (p) {
