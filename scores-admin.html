@@ -54,6 +54,8 @@
   .avg.pending{color:#c3cad8;font-weight:600;font-family:'Inter',sans-serif;font-size:12px}
   .rank{display:inline-block;min-width:22px;font-family:'Montserrat',sans-serif;font-weight:800}
   .rank.top{color:var(--teal-deep)}
+  .tie{display:inline-block;margin-left:5px;font-size:9.5px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#b45309;background:#fff1e0;border-radius:99px;padding:1px 6px;vertical-align:middle}
+  .jt.reopened{color:#b45309;font-style:italic}
   tr.prow{cursor:pointer} tr.prow:hover td{background:var(--mist-2)}
   .detail td{background:#fbfdff;text-align:left;padding:0}
   .dinner{padding:10px 14px}
@@ -144,7 +146,10 @@
 
     // ranking by average
     var ranked=d.rows.filter(function(r){return r.average!=null;}).slice().sort(function(a,b){return b.average-a.average;});
-    var rankOf={}; ranked.forEach(function(r,i){ rankOf[r.seq]=i+1; });
+    // standard competition ranking: equal averages share a rank (1, 2, 2, 4 …) and are flagged as a tie
+    var rankOf={}, tieOf={};
+    ranked.forEach(function(r,i){ rankOf[r.seq] = (i>0 && r.average===ranked[i-1].average) ? rankOf[ranked[i-1].seq] : i+1; });
+    ranked.forEach(function(r){ tieOf[r.seq] = ranked.filter(function(x){ return x.average===r.average; }).length>1; });
 
     var rows=d.rows.slice();
     if($('#sortAvg').checked){ rows.sort(function(a,b){ var av=a.average==null?-1:a.average, bv=b.average==null?-1:b.average; return bv-av; }); }
@@ -159,12 +164,12 @@
       var hiUsed=false, loUsed=false;
       var cells=r.perJudge.map(function(x){
         if(x.total==null) return '<td class="jt none">–</td>';
-        var cls='jt'+(x.locked?'':' unlocked');
+        var cls='jt'+(x.locked?'':(x.reopened?' reopened':' unlocked'));
         if(r.average!=null){ if(!hiUsed&&x.total===hi){cls+=' hi';hiUsed=true;} else if(!loUsed&&x.total===lo){cls+=' lo';loUsed=true;} }
-        return '<td class="'+cls+'" title="'+(x.locked?'locked':'draft/unlocked')+'">'+x.total+'</td>';
+        return '<td class="'+cls+'" title="'+(x.locked?'locked':(x.reopened?'reopened — not counted until locked again':'draft — not locked yet'))+'">'+x.total+'</td>';
       }).join('');
       var avgHtml = r.average!=null ? '<span class="avg">'+r.average+'</span>' : '<span class="avg pending">'+r.locks+'/'+d.nJudges+'</span>';
-      var rk = rankOf[r.seq] ? '<span class="rank'+(rankOf[r.seq]<=4?' top':'')+'">'+rankOf[r.seq]+'</span>' : '<span class="rank" style="color:#d2d7df">–</span>';
+      var rk = rankOf[r.seq] ? '<span class="rank'+(rankOf[r.seq]<=4?' top':'')+'">'+rankOf[r.seq]+'</span>'+(tieOf[r.seq]?'<span class="tie" title="Same average as another participant — apply your tie-break rule">tie</span>':'') : '<span class="rank" style="color:#d2d7df">–</span>';
       var main='<tr class="prow" data-seq="'+r.seq+'"><td class="seq">'+r.seq+'</td>'
         +'<td class="name"><div class="nm">'+esc(r.name)+'</div><div class="co">'+esc(r.company||'—')+'</div></td>'
         +cells+'<td>'+r.locks+'/'+d.nJudges+'</td><td>'+avgHtml+'</td><td>'+rk+'</td></tr>';
@@ -178,17 +183,17 @@
   }
 
   function detailRow(r,d){
-    var colspan=3+d.judges.length+3;
+    var colspan=2+d.judges.length+3;
     var head='<tr><th class="dj" style="text-align:left">Judge</th>'+d.criteria.map(function(c){return '<th>'+esc(abbr(c.label))+'<br><small>/'+c.max+'</small></th>';}).join('')+'<th>Total</th></tr>';
     var body=r.perJudge.map(function(x){
       var cells;
       if(x.scores){ cells=x.scores.map(function(v){return '<td>'+v+'</td>';}).join('')+'<td><b>'+x.total+'</b></td>'; }
       else { cells=d.criteria.map(function(){return '<td>–</td>';}).join('')+'<td>–</td>'; }
-      return '<tr><td class="dj">'+esc(x.judge)+(x.locked?' 🔒':(x.scores?' ·draft':''))+'</td>'+cells+'</tr>';
+      return '<tr><td class="dj">'+esc(x.judge)+(x.locked?' 🔒':(x.reopened?' ·reopened':(x.scores?' ·draft':'')))+'</td>'+cells+'</tr>';
     }).join('');
     return '<tr class="detail"><td colspan="'+colspan+'"><div class="dinner"><table class="dtable">'+head+body+'</table></div></td></tr>';
   }
-  function shortName(n){ var p=n.split(' '); return p.length>1 ? p[0]+' '+p[1][0]+'.' : n; }
+  function shortName(n){ var p=String(n).replace(/^(dr|prof|ir|drs|hj|h)\.?\s+/i,'').trim().split(/\s+/); return p.length>1 ? p[0]+' '+p[1][0]+'.' : p[0]; }
   function abbr(l){ return l.replace('Community & Social ','').replace('Business & International ','Business ').replace(' & Originality','').replace('Clarity & Quality of ','').replace(' Ability',''); }
 })();
 </script>

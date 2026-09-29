@@ -499,14 +499,15 @@ const SCORES_SHEET = 'Scores';
 const REOPEN_WINDOW = 3; // a judge can reopen their N most-recently-locked scores
 
 // Seed data — written to the tabs the first time they're read (if empty).
-// Passwords are placeholders: change them in the "Judges" tab anytime.
+// Passwords are NOT kept in code (this repo is public). Set each judge's password in the
+// "Judges" tab; a judge whose Password cell is blank cannot log in.
 const DEFAULT_JUDGES = [
-  ['Rico Tedyono', 'Rico-7F2K', true],
-  ['Darwin Tjoe', 'Darwin-3QX', true],
-  ['Imelda Lim', 'Imelda-9M4', true],
-  ['Natali Ardianto', 'Natali-2ZP', true],
-  ['Dr. Anggara Hayun Anujuprana', 'Anggara-6T5', true],
-  ['Steven', 'Steven-8W9', true]
+  ['Rico Tedyono', '', true],
+  ['Darwin Tjoe', '', true],
+  ['Imelda Lim', '', true],
+  ['Natali Ardianto', '', true],
+  ['Dr. Anggara Hayun Anujuprana', '', true],
+  ['Steven', '', true]
 ];
 const SEMIFINALIST_NAMES = [
   'Al Fath Nuur Rochman', 'Nadia Nathania', 'Alpvy Ramadhan', 'Clarabelle Laura Suhandinata',
@@ -537,9 +538,22 @@ function judgesCached_() { return cachedRead_('cye_judges_v1', getJudges_); }
 function semisCached_()  { return cachedRead_('cye_semis_v1', getSemifinalists_); }
 
 /* ---- auth: token binds a judge name to a server secret ---- */
+// Signing secret for judge sessions. Created randomly the first time it's needed and kept in
+// Script Properties (JUDGE_SECRET) — never in code, since this repository is public.
+// Changing/deleting it logs every judge out (they just sign in again).
+function judgeSecret_() {
+  const props = PropertiesService.getScriptProperties();
+  var s = props.getProperty('JUDGE_SECRET');
+  if (s) return s;
+  const lk = LockService.getScriptLock(); lk.waitLock(10000);
+  try {
+    s = props.getProperty('JUDGE_SECRET');
+    if (!s) { s = Utilities.getUuid() + Utilities.getUuid(); props.setProperty('JUDGE_SECRET', s); }
+    return s;
+  } finally { lk.releaseLock(); }
+}
 function judgeToken_(name) {
-  const secret = PropertiesService.getScriptProperties().getProperty('JUDGE_SECRET') || 'cye-2026-judging';
-  const sig = Utilities.computeHmacSha256Signature(String(name), secret);
+  const sig = Utilities.computeHmacSha256Signature(String(name), judgeSecret_());
   const hex = sig.map(function (b) { b = (b < 0) ? b + 256 : b; return ('0' + b.toString(16)).slice(-2); }).join('');
   return String(name) + '|' + hex.slice(0, 24);
 }
@@ -655,27 +669,38 @@ function handleJudgeLogin_(data) {
   const name = String(data.name || '').trim();
   const pass = String(data.password || '');
   const j = judgesCached_().filter(function (x) { return x.active && x.name.toLowerCase() === name.toLowerCase(); })[0];
-  if (!j || String(j.password) !== pass) return json_({ ok: false, error: 'Wrong name or password.' });
+  if (!j || !String(j.password || '') || String(j.password) !== pass) return json_({ ok: false, error: 'Wrong name or password.' });
   return json_({ ok: true, token: judgeToken_(j.name), name: j.name });
+}
+
+// A judge's reopen window = their REOPEN_WINDOW most recently locked scores, INCLUDING ones that are
+// currently reopened (a reopened score keeps its lock time). So reopening never makes an older score
+// eligible — the window can't be walked back to reopen everything.
+function reopenWindow_(all, name) {
+  return all.filter(function (s) { return s.judge === name && s.lockedAt; })
+    .sort(function (a, b) { return b.lockedAt - a.lockedAt; })
+    .slice(0, REOPEN_WINDOW);
 }
 
 function handleJudgeData_(data) {
   const name = judgeFromToken_(data.token);
   if (!name) return json_({ ok: false, error: 'Session expired — please log in again.' });
   const semis = semisCached_();
-  const nJudges = judgesCached_().filter(function (j) { return j.active; }).length;
+  const active = judgesCached_().filter(function (j) { return j.active; }).map(function (j) { return j.name; });
+  const nJudges = active.length;
   const all = readScores_();
 
-  const mine = {};
+  const mine = {}, reopened = [];
   all.filter(function (s) { return s.judge === name; }).forEach(function (s) {
     mine[s.seq] = { scores: s.scores, total: s.total, locked: s.locked };
+    if (!s.locked && s.lockedAt) reopened.push(s.seq);           // was locked, reopened, not locked again yet
   });
-  const myLocked = all.filter(function (s) { return s.judge === name && s.locked; })
-    .sort(function (a, b) { return b.lockedAt - a.lockedAt; });
-  const reopenable = myLocked.slice(0, REOPEN_WINDOW).map(function (s) { return s.seq; });
+  const reopenable = reopenWindow_(all, name).filter(function (s) { return s.locked; }).map(function (s) { return s.seq; });
 
+  // only ACTIVE judges' locked scores count (same rule as the admin dashboard)
   const bySeq = {};
-  all.filter(function (s) { return s.locked; }).forEach(function (s) { (bySeq[s.seq] = bySeq[s.seq] || []).push(s.total); });
+  all.filter(function (s) { return s.locked && active.indexOf(s.judge) >= 0; })
+     .forEach(function (s) { (bySeq[s.seq] = bySeq[s.seq] || []).push(s.total); });
   const lockCount = {}, average = {};
   semis.forEach(function (p) {
     var totals = bySeq[p.seq] || [];
@@ -684,7 +709,7 @@ function handleJudgeData_(data) {
   });
 
   return json_({ ok: true, name: name, nJudges: nJudges, criteria: JUDGE_CRITERIA,
-    participants: semis, mine: mine, reopenable: reopenable, lockCount: lockCount, average: average });
+    participants: semis, mine: mine, reopenable: reopenable, reopened: reopened, lockCount: lockCount, average: average });
 }
 
 function handleSaveScore_(data) {
@@ -708,8 +733,11 @@ function handleSaveScore_(data) {
       val = Math.max(0, Math.min(JUDGE_CRITERIA[k].max, val));
       scores.push(val); total += val;
     }
+    // Locking stamps "Locked at"; a draft save on a reopened score keeps its original lock time,
+    // so the score keeps its place in the judge's reopen window.
+    const lockedAtCell = lock ? new Date() : (existing && existing.lockedAt ? new Date(existing.lockedAt) : '');
     const rowVals = [name, seq, p.name + (p.company ? (' — ' + p.company) : '')]
-      .concat(scores).concat([total, lock, lock ? new Date() : '']);
+      .concat(scores).concat([total, lock, lockedAtCell]);
     if (existing) sh.getRange(existing.row, 1, 1, rowVals.length).setValues([rowVals]);
     else sh.getRange(sh.getLastRow() + 1, 1, 1, rowVals.length).setValues([rowVals]);
     return json_({ ok: true, locked: lock, total: total });
@@ -723,16 +751,13 @@ function handleReopenScore_(data) {
   const lk = LockService.getScriptLock(); lk.waitLock(20000);
   try {
     const sh = getScoresSheet_();
-    const myLocked = readScores_().filter(function (s) { return s.judge === name && s.locked; })
-      .sort(function (a, b) { return b.lockedAt - a.lockedAt; });
-    const win = myLocked.slice(0, REOPEN_WINDOW).map(function (s) { return s.seq; });
-    if (win.indexOf(seq) < 0) return json_({ ok: false, error: 'Only your ' + REOPEN_WINDOW + ' most-recently-locked scores can be reopened.' });
-    const target = myLocked.filter(function (s) { return s.seq === seq; })[0];
+    const target = reopenWindow_(readScores_(), name).filter(function (s) { return s.seq === seq; })[0];
+    if (!target) return json_({ ok: false, error: 'Only your ' + REOPEN_WINDOW + ' most-recently-locked scores can be reopened.' });
+    if (!target.locked) return json_({ ok: true, already: true });   // already open
     const nC = JUDGE_CRITERIA.length;
-    // 1-based columns: Judge=1, Seq=2, Participant=3, criteria=4..3+nC, Total=3+nC+1, Locked=3+nC+2, Locked at=3+nC+3
-    // (this used to write false into Total and '' into Locked — zeroing the judge's total on every reopen)
+    // 1-based columns: Judge=1, Seq=2, Participant=3, criteria=4..3+nC, Total=3+nC+1, Locked=3+nC+2, Locked at=3+nC+3.
+    // Only clear the Locked flag — "Locked at" stays, so this score keeps its slot in the reopen window.
     sh.getRange(target.row, 3 + nC + 2).setValue(false); // Locked
-    sh.getRange(target.row, 3 + nC + 3).setValue('');    // Locked at
     return json_({ ok: true });
   } finally { lk.releaseLock(); }
 }
@@ -748,7 +773,7 @@ function handleAdminScores_(data) {
   const rows = semis.map(function (p) {
     var perJudge = judges.map(function (jn) {
       var s = all.filter(function (x) { return x.judge === jn && x.seq === p.seq; })[0];
-      return s ? { judge: jn, total: s.total, locked: s.locked, scores: s.scores }
+      return s ? { judge: jn, total: s.total, locked: s.locked, reopened: !s.locked && !!s.lockedAt, scores: s.scores }
                : { judge: jn, total: null, locked: false, scores: null };
     });
     var lockedTotals = perJudge.filter(function (x) { return x.locked && x.total != null; }).map(function (x) { return x.total; });

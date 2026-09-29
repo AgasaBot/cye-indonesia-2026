@@ -98,6 +98,10 @@
   .pc-status{flex:none;font-size:10.5px;font-weight:800;border-radius:999px;padding:5px 11px;text-transform:uppercase;letter-spacing:.04em}
   .st-none{background:#eef1f7;color:var(--faint)} .st-draft{background:var(--amber-soft);color:var(--amber)}
   .st-locked{background:var(--teal-soft);color:var(--teal-deep)}
+  .st-reopen{background:#fff1e0;color:#b45309}
+  .ct.capped{border-color:#e0a23a;background:#fff6e6;transition:none}
+  .reopen-banner{display:flex;gap:10px;align-items:flex-start;background:#fff4e5;border:1px solid #f1c27d;color:#8a4b08;border-radius:12px;padding:11px 15px;margin:0 0 14px;font-size:13px;font-weight:600}
+  .reopen-banner b{color:#6b3a05}
   .pc-crit{display:grid;grid-template-columns:repeat(5,1fr);gap:9px}
   .ct{background:#f8fafd;border:1px solid var(--line);border-radius:12px;padding:9px 8px 10px;text-align:center;transition:border-color .15s,background .15s}
   .ct.filled{background:var(--teal-soft);border-color:var(--teal-line)}
@@ -172,6 +176,7 @@
       &nbsp;<button class="guide-toggle" id="guideToggle">Criteria guide ▾</button>
       <div class="guide" id="guide"></div>
     </div>
+    <div class="reopen-banner" id="reopenBanner" hidden></div>
     <div id="cards"></div>
   </div>
 </div>
@@ -188,7 +193,7 @@
   };
   var $ = function(s){ return document.querySelector(s); };
   var st = { token:null, name:null, criteria:null, participants:null, nJudges:6,
-             scores:{}, locked:{}, locking:{}, cards:{}, built:false, poll:null, reopenable:[], mut:0 };
+             scores:{}, locked:{}, locking:{}, cards:{}, built:false, poll:null, reopenable:[], reopened:[], mut:0 };
 
   function post(b){ return fetch(ENDPOINT,{method:'POST',body:JSON.stringify(b)}).then(function(r){return r.json();}); }
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
@@ -225,7 +230,8 @@
       +'<span class="nm"><b>'+esc(st.name)+'</b><span>Judge</span><button class="lnk" id="logoutBtn">Log out</button></span>';
     $('#logoutBtn').addEventListener('click', logout);
     load(true);
-    st.poll=setInterval(function(){ load(false); }, 20000);
+    st.poll=setInterval(function(){ if(!document.hidden) load(false); }, 20000);
+    document.addEventListener('visibilitychange', function(){ if(!document.hidden && st.built) load(false); });
   }
   $('#guideToggle').addEventListener('click', function(){
     var g=$('#guide'); g.classList.toggle('open');
@@ -296,19 +302,24 @@
       });
       refs.inputs.forEach(function(inp){
         var i=+inp.dataset.i;
-        // Unscored boxes are EMPTY (faint "0" placeholder), so digits never get appended to a default 0.
-        // Focusing selects whatever is there, so typing replaces an existing score instead of extending it.
-        inp.addEventListener('focus', function(){ if(!st.locked[p.seq]) this.select(); });
-        inp.addEventListener('mouseup', function(e){ e.preventDefault(); });   // keep the focus selection (Chrome/Safari collapse it otherwise)
+        // Every tap starts a FRESH number: the box empties and shows the current score faintly as a hint.
+        // So typed digits can never land next to an old value ("12" + "5" → 125), whatever the device —
+        // iPad Safari ignores programmatic select-on-focus, which is why the earlier fix wasn't enough.
+        // Leaving the box without typing keeps the old score.
+        inp.addEventListener('focus', function(){
+          if(st.locked[p.seq]) return;
+          this.placeholder=String((st.scores[p.seq]||[])[i]||0);
+          this.value='';
+        });
         inp.addEventListener('input', function(){
           if(st.locked[p.seq]||st.locking[p.seq]){ this.value=disp(p.seq,i); return; }
           var digits=this.value.replace(/[^0-9]/g,'');
           var raw=digits===''?0:parseInt(digits,10);
           var v=applyScore(p.seq,i,raw);
-          if(raw>maxOf(i)) this.value=String(v);                 // over the max → snap to the max
-          else if(this.value!==digits) this.value=digits;        // strip anything that isn't a digit
+          if(raw>maxOf(i)){ this.value=String(v); flashCap(refs.cts[i]); }   // over the max → snap to the max, flash the tile
+          else if(this.value!==digits) this.value=digits;                     // strip anything that isn't a digit
         });
-        inp.addEventListener('blur', function(){ this.value=disp(p.seq,i); });   // tidy on exit ("05" → 5, 0 → empty)
+        inp.addEventListener('blur', function(){ this.placeholder='0'; this.value=disp(p.seq,i); });   // show the kept score
         inp.addEventListener('keydown', function(e){
           if(e.key==='Enter'){ e.preventDefault(); var nx=refs.inputs[i+1]; if(nx) nx.focus(); else this.blur(); }
         });
@@ -332,9 +343,20 @@
   function paint(seq){ var r=st.cards[seq];
     r.inputs.forEach(function(inp,i){ var v=(st.scores[seq]||[])[i]||0; inp.value=disp(seq,i); r.cts[i].classList.toggle('filled',v>0); });
     r.total.textContent=totalOf(seq); }
+  function flashCap(tile){ tile.classList.add('capped'); clearTimeout(tile._cap); tile._cap=setTimeout(function(){ tile.classList.remove('capped'); },700); }
+  function isReopened(seq){ return st.reopened.indexOf(seq)>=0; }
+  function nameOf(seq){ var p=(st.participants||[]).filter(function(x){return x.seq===seq;})[0]; return p?p.name:('#'+seq); }
+  function renderBanner(){
+    var b=$('#reopenBanner'), list=st.reopened.filter(function(q){ return !st.locked[q]; });
+    if(!list.length){ b.hidden=true; return; }
+    b.hidden=false;
+    b.innerHTML='<span>⚠️</span><span>You reopened <b>'+list.map(function(q){ return '#'+q+' '+esc(nameOf(q)); }).join(', ')
+      +'</b>. Reopened scores don\u2019t count toward the panel average until you press <b>Lock in</b> again.</span>';
+  }
   function totalOf(seq){ return (st.scores[seq]||[]).reduce(function(s,x){return s+(+x||0);},0); }
   function persistLocal(){ try{ localStorage.setItem('cye_judge_drafts_'+st.name, JSON.stringify(st.scores)); }catch(e){} }
   function markStatus(seq){ if(st.locked[seq]) return; var any=totalOf(seq)>0; var r=st.cards[seq];
+    if(isReopened(seq)){ r.status.className='pc-status st-reopen'; r.status.textContent='Reopened — lock again'; return; }
     r.status.className='pc-status '+(any?'st-draft':'st-none'); r.status.textContent=any?'Draft':'Not scored'; }
 
   var draftTimers={};
@@ -352,13 +374,17 @@
     post({action:'saveScore', token:st.token, seq:seq, scores:sent, lock:lock}).then(function(d){
       if(d&&d.ok){
         setConn('online');
-        if(lock){ st.mut++; st.locking[seq]=false; setLockedUI(seq,true); r.saveNote.className='save-note ok'; r.saveNote.textContent='Locked ✓'; load(false); }
+        if(lock){ st.mut++; st.locking[seq]=false; st.reopened=st.reopened.filter(function(q){return q!==seq;});
+          setLockedUI(seq,true); renderBanner(); r.saveNote.className='save-note ok'; r.saveNote.textContent='Locked ✓'; load(false); }
         else if(!st.locked[seq]){ r.saveNote.className='save-note ok'; r.saveNote.textContent='Saved ✓'; }
       } else {
         if(lock) st.locking[seq]=false;
         var err=(d&&d.error)||'Save failed';
         if(/log in/i.test(err)) return logout();
-        if(!lock && /locked/i.test(err)){ r.saveNote.textContent=''; return; }   // a late draft on a just-locked card: harmless, ignore
+        if(/locked/i.test(err)){                                  // the server already has this one locked
+          st.mut++; if(lock){ r.saveNote.className='save-note ok'; r.saveNote.textContent='Already locked'; } else r.saveNote.textContent='';
+          load(false); return;                                     // refresh so this card shows the locked numbers
+        }
         r.saveNote.className='save-note err'; r.saveNote.textContent=err;
       }
     }).catch(function(){
@@ -372,10 +398,13 @@
   // if an auto-save failed (venue wifi), try again shortly — unless the card has since been locked
   function retryDraft(seq){ clearTimeout(draftTimers[seq]); draftTimers[seq]=setTimeout(function(){ saveScore(seq,false,true); }, 5000); }
   function reopen(seq){
+    if(!confirm('Reopen your score for '+nameOf(seq)+'?\nIt stops counting toward the panel average until you press Lock in again.')) return;
     var r=st.cards[seq]; setConn('sync');
     post({action:'reopenScore', token:st.token, seq:seq}).then(function(d){
-      if(d&&d.ok){ st.mut++; setConn('online'); st.locking[seq]=false; setLockedUI(seq,false); r.saveNote.className='save-note'; r.saveNote.textContent='Reopened — edit and lock again'; load(false); }
-      else alert((d&&d.error)||'Could not reopen.');
+      if(d&&d.ok){ st.mut++; setConn('online'); st.locking[seq]=false;
+        if(!isReopened(seq)) st.reopened.push(seq);
+        setLockedUI(seq,false); renderBanner(); r.saveNote.className='save-note'; r.saveNote.textContent='Edit, then Lock in again'; load(false); }
+      else { alert((d&&d.error)||'Could not reopen.'); load(false); }
     }).catch(function(){ setConn('off'); alert('Could not reach the server.'); });
   }
 
@@ -398,12 +427,13 @@
       if(st.reopenable && st.reopenable.indexOf(seq)>=0){
         var b=document.createElement('button'); b.className='btn amber sm act-reopen'; b.type='button'; b.textContent='Reopen';
         b.addEventListener('click', function(){ reopen(seq); }); r.actions.appendChild(b);
-      } else { var n=document.createElement('span'); n.className='save-note locknote'; n.textContent='Locked'; r.actions.appendChild(n); }
+      }   // locked and outside the reopen window: the "Locked" pill already says it all
     }
   }
 
   function applyData(d, first){
     st.reopenable=d.reopenable||[];
+    st.reopened=(d.reopened||[]).slice();
     var lockedCount=0;
     d.participants.forEach(function(p){
       var seq=p.seq, r=st.cards[seq], mine=d.mine[seq];
@@ -413,7 +443,9 @@
         var draft=null; try{ var all=JSON.parse(localStorage.getItem('cye_judge_drafts_'+st.name)||'{}'); draft=all[seq]; }catch(e){}
         if(!(draft && draft.length===st.criteria.length)) draft=null;
         var serverHas = mine && mine.scores && arrSum(mine.scores)>0;
-        var vals = isLocked ? mine.scores : (serverHas ? mine.scores : (draft||st.criteria.map(function(){return 0;})));
+        // open card: this device's own draft is the freshest copy (it's saved on every keystroke, even offline)
+        var localHas = draft && arrSum(draft)>0;
+        var vals = isLocked ? mine.scores : (localHas ? draft : (serverHas ? mine.scores : st.criteria.map(function(){return 0;})));
         st.scores[seq]=vals.slice();
         paint(seq);
       } else if(isLocked && !st.locked[seq] && !st.locking[seq]){
@@ -427,6 +459,7 @@
       if(avg!=null){ r.avgband.hidden=false; r.avgVal.textContent=avg; r.avgNote.textContent='All '+d.nJudges+' locked · highest & lowest dropped'; }
       else r.avgband.hidden=true;
     });
+    renderBanner();
     var pct=Math.round(lockedCount/d.participants.length*100);
     $('#progBar').style.width=pct+'%';
     $('#progText').innerHTML='<b>'+lockedCount+'</b> of '+d.participants.length+' locked';
