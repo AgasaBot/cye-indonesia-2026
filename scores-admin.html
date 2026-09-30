@@ -139,8 +139,9 @@
   var ENDPOINT = 'https://script.google.com/macros/s/AKfycbwY5zaPSyDHNjbjvBsBUbMrjWd_mMPWyywfEFBIFtsgkmodhG8D9gxC9dGezsCf6iwN/exec';
   var $=function(s){return document.querySelector(s);};
   var msg=$('#msg');
-  // picks = the admin's in-progress Top 4 choice (semifinal seqs); kept across auto-refreshes
-  var state={pass:null, round:'semi', data:{semi:null, final:null}, expanded:{semi:{}, final:{}}, timer:null, picks:null, editing:false, busy:false};
+  // picks = the Top 4 in the picker (semifinal seqs). Until the admin changes a slot it follows the live
+  // ranking on every refresh; once they change one (picksEdited) their choice is kept across refreshes.
+  var state={pass:null, round:'semi', data:{semi:null, final:null}, expanded:{semi:{}, final:{}}, timer:null, picks:null, picksEdited:false, editing:false, busy:false};
   function show(t){ msg.className='msg bad'; msg.textContent=t; } function clr(){ msg.className='msg'; msg.textContent=''; }
   function post(b){ return fetch(ENDPOINT,{method:'POST',body:JSON.stringify(b)}).then(function(r){return r.json();}); }
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
@@ -260,7 +261,7 @@
         +(d.finalStarted?'':'<button class="btn ghost" id="luEdit">Change line-up</button><button class="btn danger" id="luClear">Remove line-up</button>')+'</div>';
       $('#luGo').addEventListener('click', function(){ switchRound('final'); });
       if(!d.finalStarted){
-        $('#luEdit').addEventListener('click', function(){ state.editing=true; state.picks=d.finalists.map(function(f){ return f.semiSeq; }); render(); });
+        $('#luEdit').addEventListener('click', function(){ state.editing=true; state.picksEdited=true; state.picks=d.finalists.map(function(f){ return f.semiSeq; }); render(); });
         $('#luClear').addEventListener('click', clearLineup);
       }
       return;
@@ -269,7 +270,7 @@
     // don't redraw the pickers under the admin's hand (auto-refresh would close an open dropdown)
     var ae=document.activeElement; if(ae && ae.tagName==='SELECT' && box.contains(ae)) return;
     // picking: pre-fill with the current top by average (the admin can override any slot, e.g. to settle a tie)
-    if(!state.picks){ state.picks=[]; for(var i=0;i<size;i++) state.picks.push(R.ranked[i]?R.ranked[i].seq:''); }
+    if(!state.picks || !state.picksEdited){ state.picks=[]; for(var i=0;i<size;i++) state.picks.push(R.ranked[i]?R.ranked[i].seq:''); }
     var opts=d.rows.slice().sort(function(a,b){
       var ra=R.rankOf[a.seq]||999, rb=R.rankOf[b.seq]||999; return ra-rb || a.seq-b.seq; });
     var sel=function(i){
@@ -291,17 +292,18 @@
     if(dup) warns.push('The same participant is picked twice.');
     var ready=picked.length===size && !dup;
     box.innerHTML='<div class="lu-k">Final round</div><h2>'+(state.editing?'Change the Final line-up':'Pick the Top '+size+' for the Final')+'</h2>'
-      +'<p>Pre-filled with the current Top '+size+' by average. Set the order they will pitch in the Final, then start it — judges see the Final tab right away.</p>'
+      +'<p>'+(state.picksEdited&&!state.editing?'Your picks are kept while the scores update. ':'Follows the live Top '+size+' by average until you change a slot. ')+'Set the order they will pitch in the Final, then start it — judges see the Final tab right away.</p>'
       +'<div class="lu-picks">'+[0,1,2,3].slice(0,size).map(sel).join('')+'</div>'
       +(warns.length?'<div class="lu-warn">'+warns.join('<br>')+'</div>':'')
       +'<div class="lu-actions"><button class="btn" id="luStart"'+(ready?'':' disabled')+'>'+(state.editing?'Save line-up':'Start the Final →')+'</button>'
-      +(state.editing?'<button class="btn ghost" id="luCancel">Cancel</button>':'')
+      +(state.editing?'<button class="btn ghost" id="luCancel">Cancel</button>':(state.picksEdited?'<button class="btn ghost" id="luReset">Use current Top '+size+'</button>':''))
       +'<span class="note">Line-up can be changed until the first Final score is saved.</span></div>';
     [].forEach.call(box.querySelectorAll('select'), function(s){
-      s.addEventListener('change', function(){ state.picks[+s.dataset.i]=s.value?+s.value:''; renderLineup(); });
+      s.addEventListener('change', function(){ state.picks[+s.dataset.i]=s.value?+s.value:''; state.picksEdited=true; renderLineup(); });
     });
     $('#luStart').addEventListener('click', function(){ startFinal(bySeq); });
-    if(state.editing) $('#luCancel').addEventListener('click', function(){ state.editing=false; state.picks=null; render(); });
+    if(state.editing) $('#luCancel').addEventListener('click', function(){ state.editing=false; state.picks=null; state.picksEdited=false; render(); });
+    else if(state.picksEdited) $('#luReset').addEventListener('click', function(){ state.picks=null; state.picksEdited=false; renderLineup(); });
   }
 
   function startFinal(bySeq){
@@ -309,7 +311,7 @@
     if(!confirm((state.editing?'Save this Final line-up?':'Start the Final with this line-up?')+'\n\n'+list+'\n\nJudges will see the Final tab right away.')) return;
     state.busy=true; var b=$('#luStart'); b.disabled=true; b.textContent='Saving…';
     post({action:'setFinalists', passcode:state.pass, seqs:state.picks}).then(function(r){
-      if(r&&r.ok){ state.editing=false; state.picks=null;
+      if(r&&r.ok){ state.editing=false; state.picks=null; state.picksEdited=false;
         return load(state.pass,'semi').then(function(){ switchRound('final'); }); }
       alert((r&&r.error)||'Could not start the Final.'); render();
     }).catch(function(){ alert('Could not reach the server.'); render(); })
@@ -320,7 +322,7 @@
     state.busy=true;
     post({action:'setFinalists', passcode:state.pass, clear:true}).then(function(r){
       if(!(r&&r.ok)) alert((r&&r.error)||'Could not remove the line-up.');
-      state.picks=null; state.data.final=null; return load(state.pass,'semi');
+      state.picks=null; state.picksEdited=false; state.data.final=null; return load(state.pass,'semi');
     }).catch(function(){ alert('Could not reach the server.'); })
     .finally(function(){ state.busy=false; });
   }

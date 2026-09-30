@@ -218,7 +218,7 @@
   // Each round keeps its own cards, scores, timers and refresh counters, so switching tabs can never
   // send one round's numbers (or a pending auto-save) to the other round.
   function mkRound(key, host){ return { key:key, host:host, participants:[], sig:'', scores:{}, locked:{}, locking:{}, cards:{},
-    built:false, reopenable:[], reopened:[], mut:0, loadSeq:0, timers:{}, lockedCount:0 }; }
+    built:false, reopenable:[], reopened:[], mut:0, loadSeq:0, timers:{}, lockedCount:0, lockFailed:{} }; }
   var R = { semi:mkRound('semi',$('#cards-semi')), final:mkRound('final',$('#cards-final')) };
   function cur(){ return R[st.round]; }
 
@@ -453,30 +453,35 @@
     if(R[rs.key]!==rs) return;                                  // this round's cards were rebuilt; the old card is gone
     var r=rs.cards[seq];
     if(!silent){ r.draftBtn.disabled=true; r.lockBtn.disabled=true; }
-    r.saveNote.className='save-note'; r.saveNote.textContent=lock?'Locking…':'Saving…'; setConn('sync');
+    // a background retry after a failed Lock in keeps the "Not locked" message on screen until it succeeds
+    if(!(silent && rs.lockFailed[seq])){ r.saveNote.className='save-note'; r.saveNote.textContent=lock?'Locking…':'Saving…'; }
+    setConn('sync');
     var sent=rs.scores[seq].slice();
     post({action:'saveScore', token:st.token, round:rs.key, seq:seq, expect:nameOf(rs,seq), scores:sent, lock:lock}).then(function(d){
       if(d&&d.ok){
         setConn('online');
-        if(lock){ rs.mut++; rs.locking[seq]=false; rs.reopened=rs.reopened.filter(function(q){return q!==seq;});
+        if(lock){ rs.mut++; rs.locking[seq]=false; rs.lockFailed[seq]=false; rs.reopened=rs.reopened.filter(function(q){return q!==seq;});
           setLockedUI(rs,seq,true); renderBanner(); r.saveNote.className='save-note ok'; r.saveNote.textContent='Locked ✓'; load(rs,false); }
-        else if(!rs.locked[seq]){ r.saveNote.className='save-note ok'; r.saveNote.textContent='Saved ✓'; }
+        else if(!rs.locked[seq]){
+          if(rs.lockFailed[seq]){ r.saveNote.className='save-note err'; r.saveNote.textContent='Back online — press Lock in again'; }
+          else { r.saveNote.className='save-note ok'; r.saveNote.textContent='Saved ✓'; }
+        }
       } else {
         if(lock) rs.locking[seq]=false;
         var err=(d&&d.error)||'Save failed';
         if(/log in/i.test(err)) return logout();
         if(d&&d.lineup){ rs.mut++; load(rs,true); return; }      // the line-up changed underneath this page — rebuild it
         if(/locked/i.test(err)){                                  // the server already has this one locked
-          rs.mut++; if(lock){ r.saveNote.className='save-note ok'; r.saveNote.textContent='Already locked'; } else r.saveNote.textContent='';
+          rs.mut++; if(lock){ r.saveNote.className='save-note ok'; r.saveNote.textContent='Already locked'; } else if(!rs.locked[seq]) r.saveNote.textContent='';
           load(rs,false); return;                                  // refresh so this card shows the locked numbers
         }
         r.saveNote.className='save-note err'; r.saveNote.textContent=err;
       }
     }).catch(function(){
-      if(lock) rs.locking[seq]=false;
+      if(lock){ rs.locking[seq]=false; rs.lockFailed[seq]=true; }
       setConn('off'); r.saveNote.className='save-note err';
-      r.saveNote.textContent = lock ? 'Not locked — check connection & try again' : 'Offline — will retry';
-      if(!lock) retryDraft(rs,seq);
+      r.saveNote.textContent = rs.lockFailed[seq] ? 'Not locked — check connection & try again' : 'Offline — will retry';
+      retryDraft(rs,seq);   // keep trying in the background (also after a failed Lock in) so the server gets the scores once back online
     })
     .finally(function(){ r.draftBtn.disabled=false; r.lockBtn.disabled=false; });
   }
