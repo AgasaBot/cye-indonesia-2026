@@ -6,6 +6,9 @@
   const $ = (s, c) => (c||document).querySelector(s);
   const $$ = (s, c) => Array.from((c||document).querySelectorAll(s));
 
+  // Apps Script web app (registration + payment status).
+  const ENDPOINT = 'https://script.google.com/macros/s/AKfycbwY5zaPSyDHNjbjvBsBUbMrjWd_mMPWyywfEFBIFtsgkmodhG8D9gxC9dGezsCf6iwN/exec';
+
   /* ---------- nav scroll state ---------- */
   const nav = $('#nav');
   const onScroll = () => nav.classList.toggle('scrolled', window.scrollY > 30);
@@ -75,8 +78,9 @@
     });
   });
 
-  /* ---------- multi-step form ---------- */
+  /* ---------- multi-step form (only while registration is open) ---------- */
   const form = $('#regForm');
+  if (form) {
   const steps = $$('.fstep', form);
   const stepsInd = $$('#stepsInd .si');
   const stepLabel = $('#stepLabel');
@@ -178,7 +182,6 @@
      and saves uploaded files to a Google Drive folder. Set ENDPOINT to the
      deployed web-app URL. Files (business plan PDF + headshot) are sent as
      base64; the pitch video is collected as a link, not a file. */
-  const ENDPOINT = 'https://script.google.com/macros/s/AKfycbwY5zaPSyDHNjbjvBsBUbMrjWd_mMPWyywfEFBIFtsgkmodhG8D9gxC9dGezsCf6iwN/exec';
 
   function readFileAsBase64(file){
     return new Promise((resolve, reject) => {
@@ -262,6 +265,7 @@
     if (f) f.classList.remove('err');
     if (e.target.name === 'consent'){ const cm = $('#consentMsg'); if (cm) cm.style.display = 'none'; }
   });
+  }
 
   /* ---------- Midtrans payment (optional, shown on the success screen) ---------- */
   let payRef = null;
