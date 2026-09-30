@@ -218,7 +218,7 @@
   // Each round keeps its own cards, scores, timers and refresh counters, so switching tabs can never
   // send one round's numbers (or a pending auto-save) to the other round.
   function mkRound(key, host){ return { key:key, host:host, participants:[], sig:'', scores:{}, locked:{}, locking:{}, cards:{},
-    built:false, reopenable:[], reopened:[], mut:0, loadSeq:0, timers:{}, lockedCount:0, lockFailed:{} }; }
+    built:false, reopenable:[], reopened:[], mut:0, loadSeq:0, timers:{}, lockedCount:0, lockFailed:{}, dirty:{}, retry:null }; }
   var R = { semi:mkRound('semi',$('#cards-semi')), final:mkRound('final',$('#cards-final')) };
   function cur(){ return R[st.round]; }
 
@@ -229,10 +229,13 @@
     $('#connText').textContent = state==='off'?'Reconnecting…':state==='sync'?'Saving…':'Online'; }
 
   /* ---------- login ---------- */
-  post({action:'judgeNames'}).then(function(d){
-    var sel=$('#loginName'); sel.innerHTML='<option value="">Select your name…</option>';
-    (d.judges||[]).forEach(function(n){ var o=document.createElement('option'); o.value=n; o.textContent=n; sel.appendChild(o); });
-  }).catch(function(){ $('#loginName').innerHTML='<option value="">Could not load — check connection</option>'; });
+  (function loadNames(){
+    post({action:'judgeNames'}).then(function(d){
+      if(!d||!d.ok) throw 0;
+      var sel=$('#loginName'); sel.innerHTML='<option value="">Select your name…</option>';
+      (d.judges||[]).forEach(function(n){ var o=document.createElement('option'); o.value=n; o.textContent=n; sel.appendChild(o); });
+    }).catch(function(){ $('#loginName').innerHTML='<option value="">Connecting… (check Wi-Fi)</option>'; setTimeout(loadNames, 4000); });
+  })();
 
   $('#loginBtn').addEventListener('click', function(){
     var m=$('#loginMsg'); m.className='msg';
@@ -303,11 +306,14 @@
     if(!v && st.round==='final'){ st.round='semi'; showRound(); }   // the admin cleared the Final line-up
   }
 
-  var draftKey=function(k){ return 'cye_judge_drafts_'+st.name+(k==='final'?'_final':''); };
+  // Local copy of this device's scores. A card's local copy is only used again if it holds edits the
+  // server never confirmed (dirty) — so a device can't resurrect old numbers after the server changed.
+  var draftKey=function(k){ return 'cye_judge_v2_drafts_'+st.name+(k==='final'?'_final':''); };
   function load(rs, first){
+    rs=R[rs.key];                                               // always the round's current state (it may have been rebuilt)
     var my=++rs.loadSeq, epoch=rs.mut;
     return post({action:'judgeData', token:st.token, round:rs.key}).then(function(d){
-      if(!d||!d.ok){ if(d&&/log in/i.test(d.error||'')) return logout(); setConn('off'); show($('#appMsg'),'bad',(d&&d.error)||'Could not load.'); return; }
+      if(!d||!d.ok){ if(d&&/log in/i.test(d.error||'')) return logout(); setConn('off'); show($('#appMsg'),'bad',(d&&d.error)||'Could not load.'); retrySoon(rs); return; }
       setConn('online'); $('#appMsg').className='msg';
       st.api=d.api||1;
       setFinalReady(st.api>=2 && !!d.finalReady);
@@ -319,10 +325,12 @@
       var sig=(d.participants||[]).map(function(p){ return p.seq+':'+p.name; }).join('|');
       if(rs.built && sig!==rs.sig){ rs=resetRound(rs); first=true; }   // the Final line-up was changed before anyone scored it
       rs.participants=d.participants||[]; rs.sig=sig;
-      if(!rs.built){ buildCards(rs); rs.built=true; }
+      if(!rs.built){ buildCards(rs); rs.built=true; first=true; }   // freshly built cards always restore saved/unsaved scores
       applyData(rs, d, first);
-    }).catch(function(){ setConn('off'); });
+    }).catch(function(){ setConn('off'); retrySoon(rs); });
   }
+  // a round that hasn't loaded yet (e.g. Wi-Fi blip right after sign-in) retries in 3s instead of waiting for the 20s poll
+  function retrySoon(rs){ if(rs.built || rs.retry) return; rs.retry=setTimeout(function(){ rs.retry=null; load(rs, true); }, 3000); }
   function resetRound(rs){
     Object.keys(rs.timers).forEach(function(k){ clearTimeout(rs.timers[k]); });
     rs.host.innerHTML='';
@@ -414,7 +422,7 @@
 
   var maxOf=function(i){ return st.criteria[i].max; };
   // update the score state (clamped) + total + tile tint + autosave; does NOT touch the input text
-  function applyScore(rs,seq,i,v){ v=Math.max(0,Math.min(maxOf(i),Math.round(v||0))); rs.scores[seq][i]=v;
+  function applyScore(rs,seq,i,v){ v=Math.max(0,Math.min(maxOf(i),Math.round(v||0))); rs.scores[seq][i]=v; rs.dirty[seq]=true;
     var r=rs.cards[seq]; r.cts[i].classList.toggle('filled',v>0); r.total.textContent=totalOf(rs,seq);
     persistLocal(rs); scheduleDraft(rs,seq); markStatus(rs,seq); return v; }
   // what an input should show: locked → the number (even 0); editable → blank for 0 (placeholder shows it)
@@ -438,7 +446,9 @@
     $('#progText').innerHTML=n?('<b>'+rs.lockedCount+'</b> of '+n+' locked'):'—';
   }
   function totalOf(rs,seq){ return (rs.scores[seq]||[]).reduce(function(s,x){return s+(+x||0);},0); }
-  function persistLocal(rs){ try{ localStorage.setItem(draftKey(rs.key), JSON.stringify(rs.scores)); }catch(e){} }
+  function persistLocal(rs){ try{ localStorage.setItem(draftKey(rs.key), JSON.stringify({s:rs.scores, d:rs.dirty})); }catch(e){} }
+  // the server now holds exactly what this card shows → the local copy is no longer needed for recovery
+  function markSaved(rs,seq,sent){ if(rs.dirty[seq] && String(rs.scores[seq])===String(sent)){ rs.dirty[seq]=false; persistLocal(rs); } }
   function markStatus(rs,seq){ if(rs.locked[seq]) return; var any=totalOf(rs,seq)>0; var r=rs.cards[seq];
     if(isReopened(rs,seq)){ r.status.className='pc-status st-reopen'; r.status.textContent='Reopened — lock again'; return; }
     r.status.className='pc-status '+(any?'st-draft':'st-none'); r.status.textContent=any?'Draft':'Not scored'; }
@@ -460,6 +470,7 @@
     post({action:'saveScore', token:st.token, round:rs.key, seq:seq, expect:nameOf(rs,seq), scores:sent, lock:lock}).then(function(d){
       if(d&&d.ok){
         setConn('online');
+        markSaved(rs,seq,sent);
         if(lock){ rs.mut++; rs.locking[seq]=false; rs.lockFailed[seq]=false; rs.reopened=rs.reopened.filter(function(q){return q!==seq;});
           setLockedUI(rs,seq,true); renderBanner(); r.saveNote.className='save-note ok'; r.saveNote.textContent='Locked ✓'; load(rs,false); }
         else if(!rs.locked[seq]){
@@ -491,7 +502,7 @@
     if(!confirm('Reopen your score for '+nameOf(rs,seq)+'?\nIt stops counting toward the panel average until you press Lock in again.')) return;
     var r=rs.cards[seq]; setConn('sync');
     post({action:'reopenScore', token:st.token, round:rs.key, seq:seq}).then(function(d){
-      if(d&&d.ok){ rs.mut++; setConn('online'); rs.locking[seq]=false;
+      if(d&&d.ok){ rs.mut++; setConn('online'); rs.locking[seq]=false; rs.lockFailed[seq]=false;
         if(!isReopened(rs,seq)) rs.reopened.push(seq);
         setLockedUI(rs,seq,false); renderBanner(); r.saveNote.className='save-note'; r.saveNote.textContent='Edit, then Lock in again'; load(rs,false); }
       else { alert((d&&d.error)||'Could not reopen.'); load(rs,false); }
@@ -505,7 +516,8 @@
     r.root.classList.toggle('locked', locked);
     r.inputs.forEach(function(inp){ inp.disabled=locked; });
     if(was!==locked) paint(rs,seq);   // locked shows the numbers; editable shows blanks for 0 (only repaint on a real change, so typing is never clobbered)
-    if(locked){ r.status.className='pc-status st-locked'; r.status.textContent='Locked'; r.draftBtn.hidden=true; r.lockBtn.hidden=true; }
+    if(locked){ rs.lockFailed[seq]=false; if(rs.dirty[seq]){ rs.dirty[seq]=false; persistLocal(rs); }
+      r.status.className='pc-status st-locked'; r.status.textContent='Locked'; r.draftBtn.hidden=true; r.lockBtn.hidden=true; }
     else { r.draftBtn.hidden=false; r.lockBtn.hidden=false; markStatus(rs,seq); }
     refreshActionButtons(rs,seq);
   }
@@ -527,14 +539,16 @@
       if(!r) return;
       var isLocked = !!(mine && mine.locked);
       if(first){
-        var draft=null; try{ var all=JSON.parse(localStorage.getItem(draftKey(rs.key))||'{}'); draft=all[seq]; }catch(e){}
+        var draft=null, dirty=false; try{ var all=JSON.parse(localStorage.getItem(draftKey(rs.key))||'{}'); draft=(all.s||{})[seq]; dirty=!!(all.d||{})[seq]; }catch(e){}
         if(!(draft && draft.length===st.criteria.length)) draft=null;
         var serverHas = mine && mine.scores && arrSum(mine.scores)>0;
         // open card: this device's own draft is the freshest copy (it's saved on every keystroke, even offline)
-        var localHas = draft && arrSum(draft)>0;
+        var localHas = dirty && draft && arrSum(draft)>0;
+        rs.dirty[seq]=!!(localHas && !isLocked);
         var vals = isLocked ? mine.scores : (localHas ? draft : (serverHas ? mine.scores : st.criteria.map(function(){return 0;})));
         rs.scores[seq]=vals.slice();
         paint(rs,seq);
+        if(rs.dirty[seq]) scheduleDraft(rs,seq);   // unsaved edits from before the reload/outage: send them to the server
       } else if(isLocked && !rs.locked[seq] && !rs.locking[seq]){
         rs.scores[seq]=mine.scores.slice();   // locked on another device — adopt the server's numbers (setLockedUI repaints)
       }
@@ -552,9 +566,9 @@
   }
   function arrSum(a){ return (a||[]).reduce(function(s,x){return s+(+x||0);},0); }
 
-  try{ var saved=localStorage.getItem('cye_judge_token'); if(saved){ st.token=saved;
-    post({action:'judgeData',token:saved}).then(function(d){ if(d&&d.ok){ st.name=d.name; enterApp(); } }).catch(function(){});
-  } }catch(e){}
+  try{ var saved=localStorage.getItem('cye_judge_token'), cut=saved?saved.lastIndexOf('|'):-1;
+    if(saved && cut>0){ st.token=saved; st.name=saved.slice(0,cut); enterApp(); }   // load() signs out if the server rejects it
+  }catch(e){}
 })();
 </script>
 </body>

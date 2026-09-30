@@ -518,7 +518,7 @@ const DEFAULT_JUDGES = [
 ];
 const SEMIFINALIST_NAMES = [
   'Al Fath Nuur Rochman', 'Nadia Nathania', 'Alpvy Ramadhan', 'Clarabelle Laura Suhandinata',
-  'Yessi Calissa', 'Salsabilla Mazaya Ramadhani', 'Fahrizal Maulana', 'Saivya Chauhan',
+  'Yessi Calissa', 'Salsabilla Mazaya Ramadhani', 'Fahrizal Maulana', 'Jessica Diana Kartika',
   'Gilbert Xervaxius Naphan', 'Arvega Andika Putra', 'Sidhi Umbara', 'Anastasia Laura Widjaja',
   'Felicia Magdalena Limantoro', 'Bobby Yulandika Putra', 'Victor Osman', 'Ramzi Putera Faisal',
   'Joshua William', 'Redha Bhawika Putra', 'Ilham Pinastiko', 'Fielien Kosasih'
@@ -709,6 +709,13 @@ function handleJudgeLogin_(data) {
   return json_({ ok: true, token: judgeToken_(j.name), name: j.name });
 }
 
+// Sheet writes are buffered; commit them BEFORE releasing the lock, otherwise the next judge's request can
+// take the lock, read the sheet without this write and append to the same row (Google's LockService advice).
+function releaseAfterFlush_(lk) {
+  try { SpreadsheetApp.flush(); } catch (e) {}
+  lk.releaseLock();
+}
+
 // A judge's reopen window = their REOPEN_WINDOW most recently locked scores, INCLUDING ones that are
 // currently reopened (a reopened score keeps its lock time). So reopening never makes an older score
 // eligible — the window can't be walked back to reopen everything.
@@ -756,14 +763,24 @@ function handleSaveScore_(data) {
   if (!name) return json_({ ok: false, error: 'Session expired — please log in again.' });
   const round = roundOf_(data);
   const seq = Number(data.seq);
-  const p = participantsFor_(round).filter(function (x) { return x.seq === seq; })[0];
-  if (!p) return json_({ ok: false, error: round === 'final' ? 'That finalist is not in the Final line-up.' : 'Unknown participant.' });
-  // the page says who it thinks #seq is; if the line-up changed underneath it, refuse rather than file the score under someone else
-  if (data.expect && String(data.expect) !== p.name) return json_({ ok: false, error: 'The line-up changed — refreshing.', lineup: true });
+  var p = null;
+  if (round !== 'final') {
+    p = semisCached_().filter(function (x) { return x.seq === seq; })[0];
+    if (!p) return json_({ ok: false, error: 'Unknown participant.' });
+    // the page says who it thinks #seq is; if the list changed underneath it, refuse rather than file the score under someone else
+    if (data.expect && String(data.expect) !== p.name) return json_({ ok: false, error: 'The line-up changed — refreshing.', lineup: true });
+  }
   const lock = !!data.lock;
 
   const lk = LockService.getScriptLock(); lk.waitLock(20000);
   try {
+    if (round === 'final') {
+      // the line-up may have changed while this request waited for the lock (or the 30s cache is behind) —
+      // check it against the sheet itself before filing a Final score
+      p = getFinalists_().filter(function (x) { return x.seq === seq; })[0];
+      if (!p) return json_({ ok: false, error: 'That finalist is not in the Final line-up.', lineup: true });
+      if (data.expect && String(data.expect) !== p.name) return json_({ ok: false, error: 'The line-up changed — refreshing.', lineup: true });
+    }
     const sh = getScoresSheet_(round);
     const existing = readScores_(round).filter(function (s) { return s.judge === name && s.seq === seq; })[0];
     if (existing && existing.locked) return json_({ ok: false, error: 'That score is locked — reopen it first.' });
@@ -783,7 +800,7 @@ function handleSaveScore_(data) {
     if (existing) sh.getRange(existing.row, 1, 1, rowVals.length).setValues([rowVals]);
     else sh.getRange(sh.getLastRow() + 1, 1, 1, rowVals.length).setValues([rowVals]);
     return json_({ ok: true, locked: lock, total: total });
-  } finally { lk.releaseLock(); }
+  } finally { releaseAfterFlush_(lk); }
 }
 
 function handleReopenScore_(data) {
@@ -802,7 +819,7 @@ function handleReopenScore_(data) {
     // Only clear the Locked flag — "Locked at" stays, so this score keeps its slot in the reopen window.
     sh.getRange(target.row, 3 + nC + 2).setValue(false); // Locked
     return json_({ ok: true });
-  } finally { lk.releaseLock(); }
+  } finally { releaseAfterFlush_(lk); }
 }
 
 function checkAdmin_(data) {
@@ -868,9 +885,10 @@ function handleSetFinalists_(data) {
     sh.getRange(1, 1, 1, 4).setValues([['Seq', 'Name', 'Company', 'Semifinal #']]);
     if (rows.length) sh.getRange(2, 1, rows.length, 4).setValues(rows);
     sh.setFrozenRows(1);
+    SpreadsheetApp.flush();   // commit the new line-up before dropping the cache, so no reader re-caches the old one
     try { CacheService.getScriptCache().remove('cye_finalists_v1'); } catch (e) {}
     return json_({ ok: true, finalists: rows.map(function (r) { return { seq: r[0], name: r[1], company: r[2], semiSeq: r[3] }; }) });
-  } finally { lk.releaseLock(); }
+  } finally { releaseAfterFlush_(lk); }
 }
 
 /* Optional manual seeder — not required, since getJudges_/getSemifinalists_/

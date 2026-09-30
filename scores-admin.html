@@ -243,7 +243,7 @@
   }
 
   /* ---------- Final line-up (shown on the Semifinal tab) ---------- */
-  function renderLineup(){
+  function renderLineup(force){
     var box=$('#lineup'), d=state.data.semi;
     if(state.round!=='semi' || !d || !(d.api>=2)){ box.hidden=true; return; }
     box.hidden=false;
@@ -268,7 +268,7 @@
     }
 
     // don't redraw the pickers under the admin's hand (auto-refresh would close an open dropdown)
-    var ae=document.activeElement; if(ae && ae.tagName==='SELECT' && box.contains(ae)) return;
+    var ae=document.activeElement; if(!force && ae && ae.tagName==='SELECT' && box.contains(ae)) return;
     // picking: pre-fill with the current top by average (the admin can override any slot, e.g. to settle a tie)
     if(!state.picks || !state.picksEdited){ state.picks=[]; for(var i=0;i<size;i++) state.picks.push(R.ranked[i]?R.ranked[i].seq:''); }
     var opts=d.rows.slice().sort(function(a,b){
@@ -299,7 +299,7 @@
       +(state.editing?'<button class="btn ghost" id="luCancel">Cancel</button>':(state.picksEdited?'<button class="btn ghost" id="luReset">Use current Top '+size+'</button>':''))
       +'<span class="note">Line-up can be changed until the first Final score is saved.</span></div>';
     [].forEach.call(box.querySelectorAll('select'), function(s){
-      s.addEventListener('change', function(){ state.picks[+s.dataset.i]=s.value?+s.value:''; state.picksEdited=true; renderLineup(); });
+      s.addEventListener('change', function(){ state.picks[+s.dataset.i]=s.value?+s.value:''; state.picksEdited=true; renderLineup(true); });
     });
     $('#luStart').addEventListener('click', function(){ startFinal(bySeq); });
     if(state.editing) $('#luCancel').addEventListener('click', function(){ state.editing=false; state.picks=null; state.picksEdited=false; render(); });
