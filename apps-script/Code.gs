@@ -227,7 +227,7 @@ function doPost(e) {
   try { early = JSON.parse(e.postData.contents); } catch (x) {}
   var FAST = { judgeNames: handleJudgeNames_, judgeLogin: handleJudgeLogin_, judgeData: handleJudgeData_,
                saveScore: handleSaveScore_, reopenScore: handleReopenScore_, adminScores: handleAdminScores_,
-               pendingList: handlePendingList_ };
+               setFinalists: handleSetFinalists_, pendingList: handlePendingList_ };
   if (early && early.action && Object.prototype.hasOwnProperty.call(FAST, early.action)) {
     try { return FAST[early.action](early); }
     catch (err) { return json_({ ok: false, error: String((err && err.message) || err) }); }
@@ -475,15 +475,18 @@ function json_(obj) {
 }
 
 /* =====================================================================
- * SEMIFINAL JUDGE SCORING TOOL
+ * JUDGE SCORING TOOL (Semifinal + Final)
  * ---------------------------------------------------------------------
  * Judges log in (name + password from the "Judges" tab), score each
  * semifinalist across the 5 criteria (total /100), and lock each score.
  * A judge may reopen only their 3 most-recently-locked scores. Once all
  * active judges have locked a participant, its average = drop the highest
  * and lowest total, then average the rest (with 6 judges, the middle 4).
+ * The Final works the same way for the Top 4: the admin picks them (in
+ * pitch order) on /scores-admin, which fills the "Finalists" tab; their
+ * scores go to "Final Scores", and the winner is the top Final average.
  * All data lives in the same spreadsheet: tabs "Judges", "Semifinalists",
- * "Scores". Run setupJudging() ONCE from the editor to create/seed them.
+ * "Scores", "Finalists", "Final Scores" (each created on first use).
  * =================================================================== */
 
 const JUDGE_CRITERIA = [
@@ -496,7 +499,11 @@ const JUDGE_CRITERIA = [
 const JUDGES_SHEET = 'Judges';
 const SEMIS_SHEET  = 'Semifinalists';
 const SCORES_SHEET = 'Scores';
-const REOPEN_WINDOW = 3; // a judge can reopen their N most-recently-locked scores
+const FINALISTS_SHEET    = 'Finalists';     // the Top 4, written by the admin's "Start the Final"
+const FINAL_SCORES_SHEET = 'Final Scores';
+const FINAL_SIZE = 4;
+const REOPEN_WINDOW = 3; // a judge can reopen their N most-recently-locked scores (per round)
+const JUDGE_API = 2;     // tells the pages this backend understands rounds (Semifinal / Final)
 
 // Seed data — written to the tabs the first time they're read (if empty).
 // Passwords are NOT kept in code (this repo is public). Set each judge's password in the
@@ -507,14 +514,14 @@ const DEFAULT_JUDGES = [
   ['Imelda Lim', '', true],
   ['Natali Ardianto', '', true],
   ['Dr. Anggara Hayun Anujuprana', '', true],
-  ['Steven', '', true]
+  ['Steven Leong', '', true]
 ];
 const SEMIFINALIST_NAMES = [
   'Al Fath Nuur Rochman', 'Nadia Nathania', 'Alpvy Ramadhan', 'Clarabelle Laura Suhandinata',
   'Yessi Calissa', 'Salsabilla Mazaya Ramadhani', 'Fahrizal Maulana', 'Saivya Chauhan',
   'Gilbert Xervaxius Naphan', 'Arvega Andika Putra', 'Sidhi Umbara', 'Anastasia Laura Widjaja',
   'Felicia Magdalena Limantoro', 'Bobby Yulandika Putra', 'Victor Osman', 'Ramzi Putera Faisal',
-  'Joshua William', 'Redha Bhawika Putra', 'ilham pinastiko', 'Fielien Kosasih'
+  'Joshua William', 'Redha Bhawika Putra', 'Ilham Pinastiko', 'Fielien Kosasih'
 ];
 
 // Opened once per request (each web-app call is its own execution) instead of on every tab read.
@@ -536,6 +543,12 @@ function cachedRead_(key, fn) {
 }
 function judgesCached_() { return cachedRead_('cye_judges_v1', getJudges_); }
 function semisCached_()  { return cachedRead_('cye_semis_v1', getSemifinalists_); }
+function finalistsCached_() { return cachedRead_('cye_finalists_v1', getFinalists_); }
+
+/* ---- rounds: the Semifinal and the Final share every scoring rule (criteria, locking, reopen
+ * window, trimmed average); each has its own participant tab and its own score tab. ---- */
+function roundOf_(data) { return String((data && data.round) || '') === 'final' ? 'final' : 'semi'; }
+function participantsFor_(round) { return round === 'final' ? finalistsCached_() : semisCached_(); }
 
 /* ---- auth: token binds a judge name to a server secret ---- */
 // Signing secret for judge sessions. Created randomly the first time it's needed and kept in
@@ -562,7 +575,10 @@ function judgeFromToken_(token) {
   const i = token.lastIndexOf('|');
   if (i < 1) return '';
   const name = token.slice(0, i);
-  return (judgeToken_(name) === token) ? name : '';
+  if (judgeToken_(name) !== token) return '';
+  // The judge must still be active under that exact name — a renamed or deactivated judge signs in
+  // again, so their scores can never land under a name the averages no longer count.
+  return judgesCached_().some(function (j) { return j.active && j.name === name; }) ? name : '';
 }
 
 /* ---- data readers ---- */
@@ -619,19 +635,39 @@ function getSemifinalists_() {
   return out;
 }
 
-function getScoresSheet_() {
+// Filled by the admin's "Start the Final" (setFinalists): the Top 4 in their Final pitch order.
+// An empty tab means the Final hasn't started yet.
+function getFinalists_() {
+  const sh = ssBook_().getSheetByName(FINALISTS_SHEET);
+  if (!sh || sh.getLastRow() < 2) return [];
+  const v = sh.getDataRange().getValues();
+  const head = v[0];
+  const cS = head.indexOf('Seq'), cN = head.indexOf('Name'), cC = head.indexOf('Company'), cF = head.indexOf('Semifinal #');
+  const out = [];
+  for (var i = 1; i < v.length; i++) {
+    var name = String(v[i][cN] || '').trim();
+    if (!name) continue;
+    out.push({ seq: Number(v[i][cS]) || i, name: name, company: String(v[i][cC] || '').trim(),
+               semiSeq: cF < 0 ? null : (Number(v[i][cF]) || null) });
+  }
+  out.sort(function (a, b) { return a.seq - b.seq; });
+  return out;
+}
+
+function getScoresSheet_(round) {
   const ss = ssBook_();
+  const tab = round === 'final' ? FINAL_SCORES_SHEET : SCORES_SHEET;
   const headers = ['Judge', 'Seq', 'Participant']
     .concat(JUDGE_CRITERIA.map(function (c) { return c.label + ' /' + c.max; }))
     .concat(['Total', 'Locked', 'Locked at']);
-  let sh = ss.getSheetByName(SCORES_SHEET);
-  if (!sh) sh = ss.insertSheet(SCORES_SHEET);
+  let sh = ss.getSheetByName(tab);
+  if (!sh) sh = ss.insertSheet(tab);
   if (sh.getLastRow() === 0) { sh.getRange(1, 1, 1, headers.length).setValues([headers]); sh.setFrozenRows(1); }
   return sh;
 }
 
-function readScores_() {
-  const sh = getScoresSheet_();
+function readScores_(round) {
+  const sh = getScoresSheet_(round);
   if (sh.getLastRow() < 2) return [];
   const v = sh.getDataRange().getValues();
   const nC = JUDGE_CRITERIA.length;
@@ -685,10 +721,12 @@ function reopenWindow_(all, name) {
 function handleJudgeData_(data) {
   const name = judgeFromToken_(data.token);
   if (!name) return json_({ ok: false, error: 'Session expired — please log in again.' });
-  const semis = semisCached_();
+  const round = roundOf_(data);
+  const finalists = finalistsCached_();
+  const participants = round === 'final' ? finalists : semisCached_();
   const active = judgesCached_().filter(function (j) { return j.active; }).map(function (j) { return j.name; });
   const nJudges = active.length;
-  const all = readScores_();
+  const all = participants.length ? readScores_(round) : [];
 
   const mine = {}, reopened = [];
   all.filter(function (s) { return s.judge === name; }).forEach(function (s) {
@@ -702,28 +740,32 @@ function handleJudgeData_(data) {
   all.filter(function (s) { return s.locked && active.indexOf(s.judge) >= 0; })
      .forEach(function (s) { (bySeq[s.seq] = bySeq[s.seq] || []).push(s.total); });
   const lockCount = {}, average = {};
-  semis.forEach(function (p) {
+  participants.forEach(function (p) {
     var totals = bySeq[p.seq] || [];
     lockCount[p.seq] = totals.length;
     average[p.seq] = (nJudges >= 3 && totals.length >= nJudges) ? trimmedMean_(totals) : null;
   });
 
-  return json_({ ok: true, name: name, nJudges: nJudges, criteria: JUDGE_CRITERIA,
-    participants: semis, mine: mine, reopenable: reopenable, reopened: reopened, lockCount: lockCount, average: average });
+  return json_({ ok: true, api: JUDGE_API, round: round, finalReady: finalists.length > 0,
+    name: name, nJudges: nJudges, criteria: JUDGE_CRITERIA,
+    participants: participants, mine: mine, reopenable: reopenable, reopened: reopened, lockCount: lockCount, average: average });
 }
 
 function handleSaveScore_(data) {
   const name = judgeFromToken_(data.token);
   if (!name) return json_({ ok: false, error: 'Session expired — please log in again.' });
+  const round = roundOf_(data);
   const seq = Number(data.seq);
-  const p = semisCached_().filter(function (x) { return x.seq === seq; })[0];
-  if (!p) return json_({ ok: false, error: 'Unknown participant.' });
+  const p = participantsFor_(round).filter(function (x) { return x.seq === seq; })[0];
+  if (!p) return json_({ ok: false, error: round === 'final' ? 'That finalist is not in the Final line-up.' : 'Unknown participant.' });
+  // the page says who it thinks #seq is; if the line-up changed underneath it, refuse rather than file the score under someone else
+  if (data.expect && String(data.expect) !== p.name) return json_({ ok: false, error: 'The line-up changed — refreshing.', lineup: true });
   const lock = !!data.lock;
 
   const lk = LockService.getScriptLock(); lk.waitLock(20000);
   try {
-    const sh = getScoresSheet_();
-    const existing = readScores_().filter(function (s) { return s.judge === name && s.seq === seq; })[0];
+    const sh = getScoresSheet_(round);
+    const existing = readScores_(round).filter(function (s) { return s.judge === name && s.seq === seq; })[0];
     if (existing && existing.locked) return json_({ ok: false, error: 'That score is locked — reopen it first.' });
 
     const nC = JUDGE_CRITERIA.length;
@@ -747,11 +789,12 @@ function handleSaveScore_(data) {
 function handleReopenScore_(data) {
   const name = judgeFromToken_(data.token);
   if (!name) return json_({ ok: false, error: 'Session expired — please log in again.' });
+  const round = roundOf_(data);
   const seq = Number(data.seq);
   const lk = LockService.getScriptLock(); lk.waitLock(20000);
   try {
-    const sh = getScoresSheet_();
-    const target = reopenWindow_(readScores_(), name).filter(function (s) { return s.seq === seq; })[0];
+    const sh = getScoresSheet_(round);
+    const target = reopenWindow_(readScores_(round), name).filter(function (s) { return s.seq === seq; })[0];
     if (!target) return json_({ ok: false, error: 'Only your ' + REOPEN_WINDOW + ' most-recently-locked scores can be reopened.' });
     if (!target.locked) return json_({ ok: true, already: true });   // already open
     const nC = JUDGE_CRITERIA.length;
@@ -762,15 +805,23 @@ function handleReopenScore_(data) {
   } finally { lk.releaseLock(); }
 }
 
-function handleAdminScores_(data) {
+function checkAdmin_(data) {
   const pass = PropertiesService.getScriptProperties().getProperty('ADMIN_PASSCODE') || '';
-  if (!pass) return json_({ ok: false, error: 'Server not set up: ADMIN_PASSCODE is missing.' });
-  if (String(data.passcode || '') !== pass) return json_({ ok: false, error: 'Wrong passcode.' });
-  const semis = semisCached_();
+  if (!pass) return 'Server not set up: ADMIN_PASSCODE is missing.';
+  if (String(data.passcode || '') !== pass) return 'Wrong passcode.';
+  return '';
+}
+
+function handleAdminScores_(data) {
+  const bad = checkAdmin_(data);
+  if (bad) return json_({ ok: false, error: bad });
+  const round = roundOf_(data);
+  const finalists = finalistsCached_();
+  const participants = round === 'final' ? finalists : semisCached_();
   const judges = judgesCached_().filter(function (j) { return j.active; }).map(function (j) { return j.name; });
   const nJudges = judges.length;
-  const all = readScores_();
-  const rows = semis.map(function (p) {
+  const all = participants.length ? readScores_(round) : [];
+  const rows = participants.map(function (p) {
     var perJudge = judges.map(function (jn) {
       var s = all.filter(function (x) { return x.judge === jn && x.seq === p.seq; })[0];
       return s ? { judge: jn, total: s.total, locked: s.locked, reopened: !s.locked && !!s.lockedAt, scores: s.scores }
@@ -778,9 +829,48 @@ function handleAdminScores_(data) {
     });
     var lockedTotals = perJudge.filter(function (x) { return x.locked && x.total != null; }).map(function (x) { return x.total; });
     var avg = (nJudges >= 3 && lockedTotals.length >= nJudges) ? trimmedMean_(lockedTotals) : null;
-    return { seq: p.seq, name: p.name, company: p.company, perJudge: perJudge, locks: lockedTotals.length, average: avg };
+    return { seq: p.seq, name: p.name, company: p.company, semiSeq: p.semiSeq || null,
+             perJudge: perJudge, locks: lockedTotals.length, average: avg };
   });
-  return json_({ ok: true, judges: judges, nJudges: nJudges, criteria: JUDGE_CRITERIA, rows: rows });
+  // once any Final score exists the line-up is frozen (setFinalists refuses), so the page can say so
+  const finalStarted = finalists.length > 0 && (round === 'final' ? all.length > 0 : readScores_('final').length > 0);
+  return json_({ ok: true, api: JUDGE_API, round: round, finalReady: finalists.length > 0, finalStarted: finalStarted,
+    finalists: finalists, finalSize: FINAL_SIZE, judges: judges, nJudges: nJudges, criteria: JUDGE_CRITERIA, rows: rows });
+}
+
+// Admin: start the Final by naming the Top 4 in their Final pitch order (data.seqs = Semifinal seq
+// numbers, e.g. [7, 2, 11, 5]) — or change/clear it (data.clear) — but only before any Final score exists.
+function handleSetFinalists_(data) {
+  const bad = checkAdmin_(data);
+  if (bad) return json_({ ok: false, error: bad });
+  const rows = [];
+  if (!data.clear) {
+    const seqs = (data.seqs || []).map(Number);
+    if (seqs.length !== FINAL_SIZE) return json_({ ok: false, error: 'Pick exactly ' + FINAL_SIZE + ' finalists.' });
+    const semis = getSemifinalists_();   // fresh read, not the 30s cache
+    const seen = {};
+    for (var i = 0; i < seqs.length; i++) {
+      var p = semis.filter(function (x) { return x.seq === seqs[i]; })[0];
+      if (!p) return json_({ ok: false, error: 'Unknown semifinalist #' + seqs[i] + '.' });
+      if (seen[p.seq]) return json_({ ok: false, error: p.name + ' is picked twice.' });
+      seen[p.seq] = true;
+      rows.push([i + 1, p.name, p.company, p.seq]);
+    }
+  }
+  const lk = LockService.getScriptLock(); lk.waitLock(20000);
+  try {
+    if (readScores_('final').length) {
+      return json_({ ok: false, error: 'Final scoring has already started, so the line-up is locked. To change it, first clear the "' + FINAL_SCORES_SHEET + '" tab in the sheet.' });
+    }
+    const ss = ssBook_();
+    const sh = ss.getSheetByName(FINALISTS_SHEET) || ss.insertSheet(FINALISTS_SHEET);
+    sh.clear();
+    sh.getRange(1, 1, 1, 4).setValues([['Seq', 'Name', 'Company', 'Semifinal #']]);
+    if (rows.length) sh.getRange(2, 1, rows.length, 4).setValues(rows);
+    sh.setFrozenRows(1);
+    try { CacheService.getScriptCache().remove('cye_finalists_v1'); } catch (e) {}
+    return json_({ ok: true, finalists: rows.map(function (r) { return { seq: r[0], name: r[1], company: r[2], semiSeq: r[3] }; }) });
+  } finally { lk.releaseLock(); }
 }
 
 /* Optional manual seeder — not required, since getJudges_/getSemifinalists_/

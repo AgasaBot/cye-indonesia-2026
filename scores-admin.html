@@ -65,6 +65,30 @@
   .legend{font-size:11.5px;color:var(--muted);margin-top:10px}
   .legend .hi{background:#eaf7f1;padding:1px 6px;border-radius:5px}
   .legend .lo{background:#fdeef1;padding:1px 6px;border-radius:5px}
+  /* rounds + Final line-up */
+  .rounds{display:inline-flex;gap:4px;background:var(--mist-2);border:1px solid var(--line);border-radius:12px;padding:4px;margin-bottom:14px}
+  .rtab{border:none;background:transparent;border-radius:9px;padding:8px 18px;font-family:'Montserrat',sans-serif;font-weight:800;font-size:13.5px;color:var(--muted);cursor:pointer}
+  .rtab.on{background:var(--navy);color:#fff}
+  .lineup{border:1.5px solid var(--teal);background:var(--mist-2);border-radius:14px;padding:16px 18px;margin-bottom:16px}
+  .lu-k{font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--teal-deep)}
+  .lineup h2{font-family:'Montserrat',sans-serif;font-weight:800;font-size:17px;margin:2px 0 4px}
+  .lineup p{font-size:13px;color:var(--muted);margin-bottom:12px}
+  .lu-picks{display:grid;grid-template-columns:repeat(2,1fr);gap:10px 14px}
+  .lu-picks label{font-size:11.5px;color:var(--muted);margin:0}
+  .lu-picks select{font-family:inherit;font-size:13.5px;width:100%;border:1.5px solid var(--line);border-radius:10px;padding:9px 8px;background:#fff;margin-top:4px}
+  .lu-list{list-style:none;display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+  .lu-list li{background:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 11px;font-size:13px}
+  .lu-list li b{display:block;font-family:'Montserrat',sans-serif}
+  .lu-list .n{font-size:10.5px;font-weight:800;color:var(--teal-deep);letter-spacing:.06em;text-transform:uppercase}
+  .lu-warn{background:#fff6e6;border:1px solid #f1c27d;color:#8a4b08;border-radius:10px;padding:9px 12px;font-size:12.5px;font-weight:600;margin-top:12px}
+  .lu-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+  .lu-actions .note{font-size:12px;color:var(--muted)}
+  .btn:disabled{opacity:.45;cursor:default;filter:none}
+  .btn.danger{background:#fff;color:var(--err);box-shadow:inset 0 0 0 1.5px #f2b8c4}
+  .empty{background:var(--mist-2);border:1px dashed var(--line);border-radius:12px;padding:22px;text-align:center;font-size:14px;color:var(--muted);margin-bottom:12px}
+  .win{display:inline-block;margin-left:6px;font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#7a5200;background:#ffe9a8;border-radius:99px;padding:2px 8px;vertical-align:middle}
+  @media(max-width:760px){.lu-list{grid-template-columns:1fr 1fr}}
+  @media(max-width:520px){.lu-picks{grid-template-columns:1fr}}
   [hidden]{display:none!important}
 </style>
 </head>
@@ -72,7 +96,7 @@
 <div class="wrap">
   <div class="card">
     <header class="hd">
-      <div><div class="kicker">CYE 2026 · Semifinal</div><h1>Scores dashboard</h1></div>
+      <div><div class="kicker">CYE 2026 · National Final</div><h1>Scores dashboard</h1></div>
       <div class="meta" id="meta" hidden></div>
     </header>
     <div class="bd">
@@ -88,6 +112,12 @@
       </div>
 
       <div id="dash" hidden>
+        <div class="rounds" id="rounds" hidden>
+          <button type="button" class="rtab on" data-r="semi">Semifinal</button>
+          <button type="button" class="rtab" data-r="final">Final</button>
+        </div>
+        <div class="lineup" id="lineup" hidden></div>
+        <div class="empty" id="finalEmpty" hidden>The Final hasn't started yet. Pick the Top 4 on the <b>Semifinal</b> tab and press <b>Start the Final</b>.</div>
         <div class="summary" id="summary"></div>
         <div class="toolbar">
           <label style="display:flex;align-items:center;gap:7px;margin:0;font-weight:600;color:var(--navy)">
@@ -97,7 +127,7 @@
           <span class="sp"></span>
           <button class="btn ghost" id="refreshBtn">Refresh</button>
         </div>
-        <div class="tablewrap"><table id="tbl"></table></div>
+        <div class="tablewrap" id="tblwrap"><table id="tbl"></table></div>
         <div class="legend">Average = each judge's total, drop the <span class="hi">highest</span> &amp; <span class="lo">lowest</span>, average the rest (with all 6 judges, the middle 4). It appears only once every judge has locked that participant. Tap a row for the per-criterion breakdown.</div>
       </div>
     </div>
@@ -108,7 +138,9 @@
 (function(){
   var ENDPOINT = 'https://script.google.com/macros/s/AKfycbwY5zaPSyDHNjbjvBsBUbMrjWd_mMPWyywfEFBIFtsgkmodhG8D9gxC9dGezsCf6iwN/exec';
   var $=function(s){return document.querySelector(s);};
-  var msg=$('#msg'); var state={pass:null,data:null,expanded:{},timer:null};
+  var msg=$('#msg');
+  // picks = the admin's in-progress Top 4 choice (semifinal seqs); kept across auto-refreshes
+  var state={pass:null, round:'semi', data:{semi:null, final:null}, expanded:{semi:{}, final:{}}, timer:null, picks:null, editing:false, busy:false};
   function show(t){ msg.className='msg bad'; msg.textContent=t; } function clr(){ msg.className='msg'; msg.textContent=''; }
   function post(b){ return fetch(ENDPOINT,{method:'POST',body:JSON.stringify(b)}).then(function(r){return r.json();}); }
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
@@ -118,16 +150,17 @@
   $('#loginBtn').addEventListener('click', function(){
     clr(); var p=$('#pass').value.trim(); if(!p){ show('Enter the passcode.'); return; }
     var b=$('#loginBtn'); b.disabled=true; b.textContent='Opening…';
-    load(p).then(function(ok){
+    load(p,'semi').then(function(ok){
       if(ok){ state.pass=p; try{localStorage.setItem('cye_admin_pass',p);}catch(e){}
         $('#loginView').hidden=true; $('#dash').hidden=false; $('#meta').hidden=false; startAuto(); }
     }).finally(function(){ b.disabled=false; b.textContent='Open dashboard →'; });
   });
   $('#pass').addEventListener('keydown',function(e){ if(e.key==='Enter') $('#loginBtn').click(); });
 
-  function load(pass){
-    return post({action:'adminScores', passcode:pass}).then(function(d){
-      if(d && d.ok){ state.data=d; render(); return true; }
+  function load(pass, round){
+    round=round||state.round;
+    return post({action:'adminScores', passcode:pass, round:round}).then(function(d){
+      if(d && d.ok){ clr(); state.data[round]=d; if(round===state.round) render(); return true; }
       show((d&&d.error)||'Could not load.'); return false;
     }).catch(function(){ show('Could not reach the server.'); return false; });
   }
@@ -135,28 +168,50 @@
   $('#refreshBtn').addEventListener('click', function(){ if(state.pass) load(state.pass); });
   $('#sortAvg').addEventListener('change', render);
   $('#autoref').addEventListener('change', startAuto);
-  function startAuto(){ if(state.timer) clearInterval(state.timer); if($('#autoref').checked){ state.timer=setInterval(function(){ if(state.pass) load(state.pass); },15000); } }
+  function startAuto(){ if(state.timer) clearInterval(state.timer); if($('#autoref').checked){ state.timer=setInterval(function(){ if(state.pass && !state.busy) load(state.pass); },15000); } }
+  [].forEach.call(document.querySelectorAll('.rtab'), function(b){
+    b.addEventListener('click', function(){ switchRound(b.dataset.r); });
+  });
+  function switchRound(r){
+    state.round=r;
+    [].forEach.call(document.querySelectorAll('.rtab'), function(b){ b.classList.toggle('on', b.dataset.r===r); });
+    render(); if(state.pass) load(state.pass, r);
+  }
 
-  function render(){
-    var d=state.data; if(!d) return;
-    var finalized=d.rows.filter(function(r){return r.average!=null;}).length;
-    $('#summary').innerHTML='<b>'+finalized+' of '+d.rows.length+'</b> participants finalized (all '+d.nJudges+' judges locked). '
-      + d.judges.length+' judges: '+d.judges.map(esc).join(', ')+'.';
-    $('#meta').innerHTML='Updated '+new Date().toLocaleTimeString();
-
-    // ranking by average
-    var ranked=d.rows.filter(function(r){return r.average!=null;}).slice().sort(function(a,b){return b.average-a.average;});
-    // standard competition ranking: equal averages share a rank (1, 2, 2, 4 …) and are flagged as a tie
+  // standard competition ranking: equal averages share a rank (1, 2, 2, 4 …) and are flagged as a tie
+  function rankRows(rows){
+    var ranked=rows.filter(function(r){return r.average!=null;}).slice().sort(function(a,b){return b.average-a.average;});
     var rankOf={}, tieOf={};
     ranked.forEach(function(r,i){ rankOf[r.seq] = (i>0 && r.average===ranked[i-1].average) ? rankOf[ranked[i-1].seq] : i+1; });
     ranked.forEach(function(r){ tieOf[r.seq] = ranked.filter(function(x){ return x.average===r.average; }).length>1; });
+    return { ranked:ranked, rankOf:rankOf, tieOf:tieOf };
+  }
+
+  function render(){
+    var d=state.data[state.round], isFinal=state.round==='final';
+    var semi=state.data.semi, api2=!!(semi && semi.api>=2);
+    $('#rounds').hidden=!api2;
+    renderLineup();
+    var finalWaiting = isFinal && (!d || !d.finalReady);
+    $('#finalEmpty').hidden=!finalWaiting;
+    $('#tblwrap').hidden=finalWaiting; $('#summary').hidden=finalWaiting;
+    if(!d || finalWaiting) return;
+    var n=d.rows.length, finalized=d.rows.filter(function(r){return r.average!=null;}).length;
+    var R=rankRows(d.rows);
+    var done = n>0 && finalized===n;
+    var winner = isFinal && done && R.ranked.length && !R.tieOf[R.ranked[0].seq] ? R.ranked[0] : null;
+    $('#summary').innerHTML='<b>'+finalized+' of '+n+'</b> '+(isFinal?'finalists':'participants')+' finalized (all '+d.nJudges+' judges locked). '
+      + (winner ? '🏆 <b>Winner: '+esc(winner.name)+'</b> ('+winner.average+'). ' : (isFinal && done ? '<b>Tie for 1st place</b> — decide the winner manually. ' : ''))
+      + d.judges.length+' judges: '+d.judges.map(esc).join(', ')+'.';
+    $('#meta').innerHTML='Updated '+new Date().toLocaleTimeString();
 
     var rows=d.rows.slice();
     if($('#sortAvg').checked){ rows.sort(function(a,b){ var av=a.average==null?-1:a.average, bv=b.average==null?-1:b.average; return bv-av; }); }
 
-    var head='<tr><th class="seq">#</th><th class="name">Participant</th>'
+    var head='<tr><th class="seq">#</th><th class="name">'+(isFinal?'Finalist':'Participant')+'</th>'
       + d.judges.map(function(j){ return '<th title="'+esc(j)+'">'+esc(shortName(j))+'</th>'; }).join('')
       + '<th>Locks</th><th>Average</th><th>Rank</th></tr>';
+    var exp=state.expanded[state.round];
     var body=rows.map(function(r){
       // determine hi/lo among locked totals for shading (only when finalized)
       var locked=r.perJudge.filter(function(x){return x.locked&&x.total!=null;}).map(function(x){return x.total;});
@@ -169,17 +224,105 @@
         return '<td class="'+cls+'" title="'+(x.locked?'locked':(x.reopened?'reopened — not counted until locked again':'draft — not locked yet'))+'">'+x.total+'</td>';
       }).join('');
       var avgHtml = r.average!=null ? '<span class="avg">'+r.average+'</span>' : '<span class="avg pending">'+r.locks+'/'+d.nJudges+'</span>';
-      var rk = rankOf[r.seq] ? '<span class="rank'+(rankOf[r.seq]<=4?' top':'')+'">'+rankOf[r.seq]+'</span>'+(tieOf[r.seq]?'<span class="tie" title="Same average as another participant — apply your tie-break rule">tie</span>':'') : '<span class="rank" style="color:#d2d7df">–</span>';
+      var rk=R.rankOf[r.seq], cut=isFinal?1:4;
+      var rkHtml = rk ? '<span class="rank'+(rk<=cut?' top':'')+'">'+rk+'</span>'
+          +(R.tieOf[r.seq]?'<span class="tie" title="Same average as another participant — decide manually">tie</span>':'')
+          +(winner && winner.seq===r.seq?'<span class="win">Winner</span>':'')
+        : '<span class="rank" style="color:#d2d7df">–</span>';
+      var sub=esc(r.company||'—')+(isFinal&&r.semiSeq?' · Semifinal #'+r.semiSeq:'');
       var main='<tr class="prow" data-seq="'+r.seq+'"><td class="seq">'+r.seq+'</td>'
-        +'<td class="name"><div class="nm">'+esc(r.name)+'</div><div class="co">'+esc(r.company||'—')+'</div></td>'
-        +cells+'<td>'+r.locks+'/'+d.nJudges+'</td><td>'+avgHtml+'</td><td>'+rk+'</td></tr>';
-      var detail = state.expanded[r.seq] ? detailRow(r,d) : '';
-      return main+detail;
+        +'<td class="name"><div class="nm">'+esc(r.name)+'</div><div class="co">'+sub+'</div></td>'
+        +cells+'<td>'+r.locks+'/'+d.nJudges+'</td><td>'+avgHtml+'</td><td>'+rkHtml+'</td></tr>';
+      return main+(exp[r.seq] ? detailRow(r,d) : '');
     }).join('');
     $('#tbl').innerHTML=head+body;
     Array.prototype.forEach.call(document.querySelectorAll('tr.prow'), function(tr){
-      tr.addEventListener('click', function(){ var s=tr.dataset.seq; state.expanded[s]=!state.expanded[s]; render(); });
+      tr.addEventListener('click', function(){ var s=tr.dataset.seq; exp[s]=!exp[s]; render(); });
     });
+  }
+
+  /* ---------- Final line-up (shown on the Semifinal tab) ---------- */
+  function renderLineup(){
+    var box=$('#lineup'), d=state.data.semi;
+    if(state.round!=='semi' || !d || !(d.api>=2)){ box.hidden=true; return; }
+    box.hidden=false;
+    var size=d.finalSize||4, R=rankRows(d.rows);
+    var bySeq={}; d.rows.forEach(function(r){ bySeq[r.seq]=r; });
+    var finalized=R.ranked.length, total=d.rows.length;
+
+    if(d.finalReady && !state.editing){
+      var names=d.finalists.map(function(f){ return '<li><span class="n">Final pitch '+f.seq+'</span><b>'+esc(f.name)+'</b>'
+        +'<span class="co">Semifinal #'+(f.semiSeq||'?')+(bySeq[f.semiSeq]&&bySeq[f.semiSeq].average!=null?' · '+bySeq[f.semiSeq].average:'')+'</span></li>'; }).join('');
+      box.innerHTML='<div class="lu-k">Final round</div><h2>The Final has started</h2>'
+        +'<p>'+(d.finalStarted?'Judges are scoring the Final, so the line-up is locked.':'Judges can see the Final tab now. You can still change the line-up until the first Final score is saved.')+'</p>'
+        +'<ul class="lu-list">'+names+'</ul>'
+        +'<div class="lu-actions"><button class="btn" id="luGo">Open the Final results →</button>'
+        +(d.finalStarted?'':'<button class="btn ghost" id="luEdit">Change line-up</button><button class="btn danger" id="luClear">Remove line-up</button>')+'</div>';
+      $('#luGo').addEventListener('click', function(){ switchRound('final'); });
+      if(!d.finalStarted){
+        $('#luEdit').addEventListener('click', function(){ state.editing=true; state.picks=d.finalists.map(function(f){ return f.semiSeq; }); render(); });
+        $('#luClear').addEventListener('click', clearLineup);
+      }
+      return;
+    }
+
+    // don't redraw the pickers under the admin's hand (auto-refresh would close an open dropdown)
+    var ae=document.activeElement; if(ae && ae.tagName==='SELECT' && box.contains(ae)) return;
+    // picking: pre-fill with the current top by average (the admin can override any slot, e.g. to settle a tie)
+    if(!state.picks){ state.picks=[]; for(var i=0;i<size;i++) state.picks.push(R.ranked[i]?R.ranked[i].seq:''); }
+    var opts=d.rows.slice().sort(function(a,b){
+      var ra=R.rankOf[a.seq]||999, rb=R.rankOf[b.seq]||999; return ra-rb || a.seq-b.seq; });
+    var sel=function(i){
+      return '<label>Final pitch '+(i+1)+'<select data-i="'+i+'"><option value="">— choose —</option>'
+        + opts.map(function(r){ var rk=R.rankOf[r.seq];
+            return '<option value="'+r.seq+'"'+(String(state.picks[i])===String(r.seq)?' selected':'')+'>'
+              +(rk?'#'+rk+' · ':'')+esc(r.name)+(r.average!=null?' — '+r.average:' — pending')+'</option>'; }).join('')
+        + '</select></label>';
+    };
+    var warns=[];
+    if(finalized<total) warns.push('Only '+finalized+' of '+total+' semifinalists are finalized so far — ranks may still change.');
+    var cutoff=R.ranked[size-1], next=R.ranked[size];
+    if(cutoff && next && cutoff.average===next.average){
+      var tied=R.ranked.filter(function(r){ return r.average===cutoff.average; }).map(function(r){ return esc(r.name); });
+      warns.push('Tie at the Top '+size+' cut-off ('+cutoff.average+'): '+tied.join(', ')+' — choose manually.');
+    }
+    var picked=state.picks.filter(function(x){ return x!==''&&x!=null; });
+    var dup=picked.length!==new Set(picked.map(String)).size;
+    if(dup) warns.push('The same participant is picked twice.');
+    var ready=picked.length===size && !dup;
+    box.innerHTML='<div class="lu-k">Final round</div><h2>'+(state.editing?'Change the Final line-up':'Pick the Top '+size+' for the Final')+'</h2>'
+      +'<p>Pre-filled with the current Top '+size+' by average. Set the order they will pitch in the Final, then start it — judges see the Final tab right away.</p>'
+      +'<div class="lu-picks">'+[0,1,2,3].slice(0,size).map(sel).join('')+'</div>'
+      +(warns.length?'<div class="lu-warn">'+warns.join('<br>')+'</div>':'')
+      +'<div class="lu-actions"><button class="btn" id="luStart"'+(ready?'':' disabled')+'>'+(state.editing?'Save line-up':'Start the Final →')+'</button>'
+      +(state.editing?'<button class="btn ghost" id="luCancel">Cancel</button>':'')
+      +'<span class="note">Line-up can be changed until the first Final score is saved.</span></div>';
+    [].forEach.call(box.querySelectorAll('select'), function(s){
+      s.addEventListener('change', function(){ state.picks[+s.dataset.i]=s.value?+s.value:''; renderLineup(); });
+    });
+    $('#luStart').addEventListener('click', function(){ startFinal(bySeq); });
+    if(state.editing) $('#luCancel').addEventListener('click', function(){ state.editing=false; state.picks=null; render(); });
+  }
+
+  function startFinal(bySeq){
+    var list=state.picks.map(function(s,i){ return (i+1)+'. '+(bySeq[s]?bySeq[s].name:'#'+s)+' (Semifinal #'+s+')'; }).join('\n');
+    if(!confirm((state.editing?'Save this Final line-up?':'Start the Final with this line-up?')+'\n\n'+list+'\n\nJudges will see the Final tab right away.')) return;
+    state.busy=true; var b=$('#luStart'); b.disabled=true; b.textContent='Saving…';
+    post({action:'setFinalists', passcode:state.pass, seqs:state.picks}).then(function(r){
+      if(r&&r.ok){ state.editing=false; state.picks=null;
+        return load(state.pass,'semi').then(function(){ switchRound('final'); }); }
+      alert((r&&r.error)||'Could not start the Final.'); render();
+    }).catch(function(){ alert('Could not reach the server.'); render(); })
+    .finally(function(){ state.busy=false; });
+  }
+  function clearLineup(){
+    if(!confirm('Remove the Final line-up?\nThe Final tab disappears for judges until you start it again.')) return;
+    state.busy=true;
+    post({action:'setFinalists', passcode:state.pass, clear:true}).then(function(r){
+      if(!(r&&r.ok)) alert((r&&r.error)||'Could not remove the line-up.');
+      state.picks=null; state.data.final=null; return load(state.pass,'semi');
+    }).catch(function(){ alert('Could not reach the server.'); })
+    .finally(function(){ state.busy=false; });
   }
 
   function detailRow(r,d){
