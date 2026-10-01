@@ -89,6 +89,7 @@
   .win{display:inline-block;margin-left:6px;font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#7a5200;background:#ffe9a8;border-radius:99px;padding:2px 8px;vertical-align:middle}
   @media(max-width:760px){.lu-list{grid-template-columns:1fr 1fr}}
   @media(max-width:520px){.lu-picks{grid-template-columns:1fr}}
+  .secret{-webkit-text-security:disc;text-security:disc}   /* masked, but not a field Chrome keeps offering to save */
   [hidden]{display:none!important}
 </style>
 </head>
@@ -105,7 +106,7 @@
       <div id="loginView">
         <div style="max-width:340px">
           <label>Admin passcode</label>
-          <input type="password" id="pass" autocomplete="off" placeholder="Same passcode as /admin">
+          <input type="text" id="pass" class="secret" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore placeholder="Same passcode as /admin">
           <div style="height:12px"></div>
           <button class="btn" id="loginBtn">Open dashboard →</button>
         </div>

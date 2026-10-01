@@ -150,6 +150,8 @@
   .notice{display:flex;gap:10px;align-items:flex-start;background:var(--teal-soft);border:1px solid var(--teal-line);color:#0d5c43;
     border-radius:12px;padding:11px 15px;margin:14px 0 0;font-size:13px;font-weight:600}
   .notice b{color:#0a4a36}
+  /* password box: masked like a password field, but not one Chrome offers to save after every Lock in */
+  .secret{-webkit-text-security:disc;text-security:disc}
   [hidden]{display:none!important}
 </style>
 </head>
@@ -164,7 +166,7 @@
       <div style="margin-bottom:14px"><label>Your name</label>
         <select id="loginName"><option value="">Loading judges…</option></select></div>
       <div style="margin-bottom:18px"><label>Password</label>
-        <input type="password" id="loginPass" autocomplete="off" placeholder="Enter your password"></div>
+        <input type="text" id="loginPass" class="secret" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore placeholder="Enter your password"></div>
       <button class="btn" id="loginBtn">Enter →</button>
     </div>
   </div>
@@ -244,7 +246,7 @@
     if(!pass){ show(m,'bad','Enter your password.'); return; }
     var b=$('#loginBtn'); b.disabled=true; b.textContent='Checking…';
     post({action:'judgeLogin', name:name, password:pass}).then(function(d){
-      if(d&&d.ok){ st.token=d.token; st.name=d.name; try{localStorage.setItem('cye_judge_token',d.token);}catch(e){} enterApp(); }
+      if(d&&d.ok){ $('#loginPass').value=''; st.token=d.token; st.name=d.name; try{localStorage.setItem('cye_judge_token',d.token);}catch(e){} enterApp(); }
       else show(m,'bad',(d&&d.error)||'Login failed.');
     }).catch(function(){ show(m,'bad','Could not reach the server.'); })
     .finally(function(){ b.disabled=false; b.textContent='Enter →'; });
