@@ -472,7 +472,12 @@
         setConn('online');
         markSaved(rs,seq,sent);
         if(lock){ rs.mut++; rs.locking[seq]=false; rs.lockFailed[seq]=false; rs.reopened=rs.reopened.filter(function(q){return q!==seq;});
-          setLockedUI(rs,seq,true); renderBanner(); r.saveNote.className='save-note ok'; r.saveNote.textContent='Locked ✓'; load(rs,false); }
+          setLockedUI(rs,seq,true); renderBanner(); r.saveNote.className='save-note ok'; r.saveNote.textContent='Locked ✓'; load(rs,false);
+          // that was this judge's last Semifinal score and the Final is already open → go straight to it
+          if(rs.key==='semi' && st.round==='semi' && st.finalReady && allLocked(rs)){
+            switchRound('final', true); notice('Semifinal complete — you are now scoring the <b>Final</b>.');
+          }
+        }
         else if(!rs.locked[seq]){
           if(rs.lockFailed[seq]){ r.saveNote.className='save-note err'; r.saveNote.textContent='Back online — press Lock in again'; }
           else { r.saveNote.className='save-note ok'; r.saveNote.textContent='Saved ✓'; }
