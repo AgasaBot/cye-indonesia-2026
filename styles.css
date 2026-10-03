@@ -444,12 +444,41 @@ h1,h2,h3,h4,.display{font-family:'Montserrat',sans-serif;font-weight:800;line-he
 @media(max-width:1100px){.judges-grid{grid-template-columns:repeat(3,1fr);gap:20px}}
 @media(max-width:640px){.judges-grid{grid-template-columns:repeat(2,1fr);gap:13px}.judge-info{padding:12px 12px 15px}.judge-role{min-height:0}}
 
+/* RESULTS */
+.results-sec{background:var(--navy);position:relative;overflow:hidden}
+.results-sec::before{content:"";position:absolute;inset:0;background:radial-gradient(55% 60% at 85% 0%,rgba(114,217,191,.16),transparent 70%);pointer-events:none}
+.results-sec .wrap{position:relative}
+.results-sec .section-head h2{color:#fff}
+.results-sec .section-head h2 .hl{color:var(--teal)}
+.results-sec .section-head p{color:#cfdaee}
+.winner-card{display:grid;grid-template-columns:240px 1fr;gap:34px;align-items:center;background:linear-gradient(135deg,#15224f,#0f1a3d);border:1px solid rgba(245,196,81,.5);border-radius:22px;padding:22px;box-shadow:0 30px 70px -30px rgba(0,0,0,.65);max-width:880px}
+.winner-photo{aspect-ratio:4/5;border-radius:16px;overflow:hidden;background:#0a3843;box-shadow:0 0 0 4px rgba(245,196,81,.35)}
+.winner-photo img{width:100%;height:100%;object-fit:cover;object-position:top center}
+.winner-badge{display:inline-block;font-family:'Montserrat',sans-serif;font-weight:800;font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;color:#3a2a00;background:linear-gradient(135deg,#ffe08a,#f5c451);padding:7px 14px;border-radius:999px;margin-bottom:14px}
+.winner-body h3{color:#fff;font-size:clamp(30px,4vw,46px);margin-bottom:6px}
+.winner-co{font-family:'Montserrat',sans-serif;font-weight:700;font-size:15px;letter-spacing:.06em;text-transform:uppercase;color:var(--teal);margin-bottom:16px}
+.winner-next{color:#cfdaee;font-size:16px;max-width:470px}
+.winner-next b{color:#fff}
+.podium{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:18px;max-width:880px}
+.place-card{display:flex;align-items:center;background:var(--navy-2);border:1px solid var(--line-light);border-radius:16px;overflow:hidden}
+.place-photo{width:104px;flex:none;aspect-ratio:4/5;background:#0a3843;overflow:hidden}
+.place-photo img{width:100%;height:100%;object-fit:cover;object-position:top center}
+.place-body{padding:12px 14px;min-width:0}
+.place-pill{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--navy);background:var(--teal);border-radius:999px;padding:3px 10px;margin-bottom:7px}
+.place-body h4{color:#fff;font-size:15.5px;line-height:1.25;margin-bottom:3px}
+.place-body p{color:#a9bbdb;font-size:12.5px;line-height:1.35}
+.results-thanks{color:#a9bbdb;font-size:14.5px;margin-top:24px;max-width:880px}
+@media(max-width:900px){.podium{grid-template-columns:1fr}}
+@media(max-width:640px){.winner-card{grid-template-columns:1fr;gap:16px;padding:16px}.winner-photo{max-width:260px}}
+
 /* TOP 20 SEMI-FINALISTS */
 .top20-sec h2 .teal{color:var(--teal-deep)}
 .top20-grid{list-style:none;display:grid;grid-template-columns:repeat(5,1fr);gap:18px}
 .t20-card{background:#fff;border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:var(--shadow-sm);transition:transform .2s,box-shadow .2s}
 .t20-card:hover{transform:translateY(-5px);box-shadow:var(--shadow)}
-.t20-photo{aspect-ratio:4/5;overflow:hidden;background:#0a3843}
+.t20-photo{aspect-ratio:4/5;overflow:hidden;background:#0a3843;position:relative}
+.t20-badge{position:absolute;top:8px;left:8px;font-family:'Montserrat',sans-serif;font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--navy);background:var(--teal);border-radius:999px;padding:4px 9px;box-shadow:0 4px 12px -4px rgba(0,0,0,.45)}
+.t20-badge.win{color:#3a2a00;background:linear-gradient(135deg,#ffe08a,#f5c451)}
 .t20-photo img{width:100%;height:100%;object-fit:cover;object-position:top center}
 .t20-info{padding:13px 14px 16px}
 .t20-info h3{font-size:15px;line-height:1.25;letter-spacing:-.01em;color:var(--navy);margin-bottom:5px}
