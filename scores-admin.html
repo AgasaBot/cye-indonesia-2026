@@ -205,7 +205,7 @@
     $('#summary').innerHTML='<b>'+finalized+' of '+n+'</b> '+(isFinal?'finalists':'participants')+' finalized (all '+d.nJudges+' judges locked). '
       + (winner ? '🏆 <b>Winner: '+esc(winner.name)+'</b> ('+winner.average+'). ' : (isFinal && done ? '<b>Tie for 1st place</b> — decide the winner manually. ' : ''))
       + d.judges.length+' judges: '+d.judges.map(esc).join(', ')+'.';
-    $('#meta').innerHTML='Updated '+new Date().toLocaleTimeString();
+    $('#meta').innerHTML='Updated '+new Date().toLocaleTimeString()+(d.scoringOpen===false?' · <b>Scoring closed</b>':'');
 
     var rows=d.rows.slice();
     if($('#sortAvg').checked){ rows.sort(function(a,b){ var av=a.average==null?-1:a.average, bv=b.average==null?-1:b.average; return bv-av; }); }
@@ -255,8 +255,10 @@
     if(d.finalReady && !state.editing){
       var names=d.finalists.map(function(f){ return '<li><span class="n">Final pitch '+f.seq+'</span><b>'+esc(f.name)+'</b>'
         +'<span class="co">Semifinal #'+(f.semiSeq||'?')+(bySeq[f.semiSeq]&&bySeq[f.semiSeq].average!=null?' · '+bySeq[f.semiSeq].average:'')+'</span></li>'; }).join('');
-      box.innerHTML='<div class="lu-k">Final round</div><h2>The Final has started</h2>'
-        +'<p>'+(d.finalStarted?'Judges are scoring the Final, so the line-up is locked.':'Judges can see the Final tab now. You can still change the line-up until the first Final score is saved.')+'</p>'
+      var closed=d.scoringOpen===false;
+      box.innerHTML='<div class="lu-k">Final round</div><h2>'+(closed?'The Final is over':'The Final has started')+'</h2>'
+        +'<p>'+(closed?'Scoring is closed — judges can no longer log in or change a score, so these results are final.'
+          :d.finalStarted?'Judges are scoring the Final, so the line-up is locked.':'Judges can see the Final tab now. You can still change the line-up until the first Final score is saved.')+'</p>'
         +'<ul class="lu-list">'+names+'</ul>'
         +'<div class="lu-actions"><button class="btn" id="luGo">Open the Final results →</button>'
         +(d.finalStarted?'':'<button class="btn ghost" id="luEdit">Change line-up</button><button class="btn danger" id="luClear">Remove line-up</button>')+'</div>';

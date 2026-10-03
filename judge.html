@@ -234,6 +234,7 @@
   (function loadNames(){
     post({action:'judgeNames'}).then(function(d){
       if(!d||!d.ok) throw 0;
+      if(d.closed) return showClosed();
       var sel=$('#loginName'); sel.innerHTML='<option value="">Select your name…</option>';
       (d.judges||[]).forEach(function(n){ var o=document.createElement('option'); o.value=n; o.textContent=n; sel.appendChild(o); });
     }).catch(function(){ $('#loginName').innerHTML='<option value="">Connecting… (check Wi-Fi)</option>'; setTimeout(loadNames, 4000); });
@@ -252,6 +253,13 @@
     .finally(function(){ b.disabled=false; b.textContent='Enter →'; });
   });
   $('#loginPass').addEventListener('keydown', function(e){ if(e.key==='Enter') $('#loginBtn').click(); });
+
+  // the event is over: the backend no longer accepts judge logins or scores
+  function showClosed(){
+    $('#loginShell .hd p').textContent='Scoring is closed — the results are final.';
+    $('#loginShell .bd').innerHTML='<div class="msg ok">Thank you, judges! Scoring for CYE Indonesia 2026 is closed.</div>'
+      +'<a class="btn" href="/#results" style="display:block;text-align:center;text-decoration:none">See the results →</a>';
+  }
 
   function logout(){ try{localStorage.removeItem('cye_judge_token');localStorage.removeItem('cye_judge_round');}catch(e){} if(st.poll) clearInterval(st.poll); location.reload(); }
 

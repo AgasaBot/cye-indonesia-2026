@@ -504,6 +504,9 @@ const FINAL_SCORES_SHEET = 'Final Scores';
 const FINAL_SIZE = 4;
 const REOPEN_WINDOW = 3; // a judge can reopen their N most-recently-locked scores (per round)
 const JUDGE_API = 2;     // tells the pages this backend understands rounds (Semifinal / Final)
+// The event is over (National Final, 3 Oct 2026): judges can't log in, save or reopen, while /scores-admin
+// still shows every score. Set to true to open scoring again (e.g. for next year's event).
+const SCORING_OPEN = false;
 
 // Seed data — written to the tabs the first time they're read (if empty).
 // Passwords are NOT kept in code (this repo is public). Set each judge's password in the
@@ -697,11 +700,19 @@ function trimmedMean_(totals) {
 }
 
 /* ---- handlers ---- */
+// Every judge action gets this once scoring is closed. The text contains "log in", so a judge page that
+// is still open signs itself out and then shows the closed notice instead of the login form.
+function scoringClosed_() {
+  return json_({ ok: false, closed: true, error: 'Scoring is closed — the results are final, so judges can no longer log in.' });
+}
+
 function handleJudgeNames_() {
+  if (!SCORING_OPEN) return json_({ ok: true, closed: true, judges: [] });
   return json_({ ok: true, judges: judgesCached_().filter(function (j) { return j.active; }).map(function (j) { return j.name; }) });
 }
 
 function handleJudgeLogin_(data) {
+  if (!SCORING_OPEN) return scoringClosed_();
   const name = String(data.name || '').trim();
   const pass = String(data.password || '');
   const j = judgesCached_().filter(function (x) { return x.active && x.name.toLowerCase() === name.toLowerCase(); })[0];
@@ -726,6 +737,7 @@ function reopenWindow_(all, name) {
 }
 
 function handleJudgeData_(data) {
+  if (!SCORING_OPEN) return scoringClosed_();
   const name = judgeFromToken_(data.token);
   if (!name) return json_({ ok: false, error: 'Session expired — please log in again.' });
   const round = roundOf_(data);
@@ -759,6 +771,7 @@ function handleJudgeData_(data) {
 }
 
 function handleSaveScore_(data) {
+  if (!SCORING_OPEN) return scoringClosed_();
   const name = judgeFromToken_(data.token);
   if (!name) return json_({ ok: false, error: 'Session expired — please log in again.' });
   const round = roundOf_(data);
@@ -804,6 +817,7 @@ function handleSaveScore_(data) {
 }
 
 function handleReopenScore_(data) {
+  if (!SCORING_OPEN) return scoringClosed_();
   const name = judgeFromToken_(data.token);
   if (!name) return json_({ ok: false, error: 'Session expired — please log in again.' });
   const round = roundOf_(data);
@@ -852,6 +866,7 @@ function handleAdminScores_(data) {
   // once any Final score exists the line-up is frozen (setFinalists refuses), so the page can say so
   const finalStarted = finalists.length > 0 && (round === 'final' ? all.length > 0 : readScores_('final').length > 0);
   return json_({ ok: true, api: JUDGE_API, round: round, finalReady: finalists.length > 0, finalStarted: finalStarted,
+    scoringOpen: SCORING_OPEN,
     finalists: finalists, finalSize: FINAL_SIZE, judges: judges, nJudges: nJudges, criteria: JUDGE_CRITERIA, rows: rows });
 }
 
