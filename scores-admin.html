@@ -141,6 +141,35 @@
   .fb pre{white-space:pre-wrap;font-family:inherit;font-size:12.5px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:8px;max-height:360px;overflow:auto}
   .fb details summary{cursor:pointer;font-size:12.5px;font-weight:700;color:var(--teal-deep)}
   @media(max-width:620px){.bar{grid-template-columns:1fr 92px}.bar .tr{grid-column:1/-1;grid-row:2}.sw{grid-template-columns:1fr}}
+  .ins-dl{display:flex;gap:8px;flex-wrap:wrap}
+  .take{background:var(--mist-2);border:1.5px solid var(--teal);border-radius:14px;padding:14px 18px;margin-top:10px}
+  .take ul{margin:4px 0 0 18px;font-size:13.5px;line-height:1.5} .take li{margin:6px 0}
+  .toc{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 0}
+  .toc a{font-size:12px;font-weight:700;color:var(--teal-deep);background:#fff;border:1px solid var(--line);border-radius:99px;padding:4px 11px;text-decoration:none}
+  .toc a:hover{border-color:var(--teal-deep)}
+  .mini-h{font-family:'Montserrat',sans-serif;font-weight:800;font-size:13.5px;margin:18px 0 8px}
+  .sstrip{position:relative;height:86px;margin:8px 8px 24px;border-bottom:1.5px solid var(--line)}
+  .sd{position:absolute;width:12px;height:12px;margin-left:-6px;border-radius:50%;background:#b7c0d1;border:2px solid #fff;box-sizing:content-box}
+  .sd.fin{background:var(--teal-deep)}
+  .sd-key{display:inline-block;width:10px;height:10px;border-radius:50%;background:#b7c0d1;vertical-align:-1px} .sd-key.fin{background:var(--teal-deep)}
+  .scut{position:absolute;top:0;bottom:0;width:0;border-left:1.5px dashed var(--err)}
+  .scut em{position:absolute;top:-3px;left:5px;font-size:10.5px;font-style:normal;font-weight:700;color:var(--err);white-space:nowrap}
+  .saxis{position:absolute;left:0;right:0;bottom:-19px;height:14px}
+  .tk{position:absolute;transform:translateX(-50%);font-size:10.5px;color:var(--muted)}
+  .loo{margin:0 0 0 18px;font-size:13px} .loo li{margin:3px 0}
+  td.pos{color:var(--teal-deep);font-weight:700} td.neg{color:var(--err);font-weight:700}
+  table.heat{min-width:640px} table.heat td.h1{background:#eef9f4} table.heat td.h2{background:#d5f1e5;font-weight:700}
+  table.heat td.l1{background:#fdf1f3} table.heat td.l2{background:#f9d9df;font-weight:700}
+  table.ins tr.hl td{background:#fff8e1}
+  table.ins.close{min-width:620px}
+  .dis-wrap{border:1px solid var(--line);border-radius:12px;padding:8px 14px 4px;background:#fff}
+  .dis-ax{display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted);margin-left:242px;padding:0 12px}
+  .dis{display:grid;grid-template-columns:230px 1fr;gap:12px;align-items:center;padding:9px 0;border-top:1px solid var(--line)}
+  .dis-t{position:relative;height:28px;background:var(--mist-2);border-radius:99px;margin:0 12px}
+  .dis-t .mid{position:absolute;left:50%;top:4px;bottom:4px;width:1px;background:rgba(14,26,60,.18)}
+  .jd{position:absolute;top:3px;width:22px;height:22px;margin-left:-11px;border-radius:50%;background:var(--navy);color:#fff;font-size:10.5px;font-weight:800;
+    display:flex;align-items:center;justify-content:center;font-family:'Montserrat',sans-serif;opacity:.88;border:1.5px solid #fff;box-sizing:content-box}
+  @media(max-width:620px){.dis{grid-template-columns:1fr;gap:4px}.dis-ax{margin-left:0}}
   .secret{-webkit-text-security:disc;text-security:disc}   /* masked, but not a field Chrome keeps offering to save */
   [hidden]{display:none!important}
 </style>
@@ -400,7 +429,7 @@
     .finally(function(){ state.busy=false; });
   }
 
-  /* ---------- Insights: how each judge scored, where the cohort stood, feedback per candidate ---------- */
+  /* ---------- Insights: takeaways, how close it was, judges, criteria, feedback per candidate ---------- */
   /* insights-calc:start — pure functions (no page access); the offline checks run this block */
   var INS = (function(){
     function nn(v){ return v!=null; }
@@ -426,6 +455,11 @@
       return da && db ? s/Math.sqrt(da*db) : null; }
     // 1, 2, 2, 4 … like the dashboard's ranking; nulls unranked
     function compRank(vals){ return vals.map(function(v){ if(v==null) return null; var b=0; vals.forEach(function(x){ if(x!=null && x>v) b++; }); return b+1; }); }
+    // the backend's official rule: with 3+ totals drop one lowest and one highest, average, 2 decimals
+    function trimmedOf(t){ if(!t.length) return null; var a=t.slice().sort(function(x,y){ return x-y; }); if(a.length>2){ a.shift(); a.pop(); } return Math.round(mean(a)*100)/100; }
+    // indexes in the top k (anyone tied with the k-th is in too)
+    function topSet(s, k){ var v=s.filter(nn).sort(function(a,b){ return b-a; }), out=[]; if(v.length<k) return out;
+      s.forEach(function(x,i){ if(x!=null && x>=v[k-1]) out.push(i); }); return out; }
 
     function compute(d){
       var J=d.judges, C=d.criteria, rows=d.rows;
@@ -440,7 +474,7 @@
       var T=J.map(function(_,j){ return rows.map(function(r){ var x=use(r,j); return x ? x.total : null; }); });
       var S=J.map(function(_,j){ return C.map(function(_,k){ return rows.map(function(r){ var x=use(r,j); return x ? x.scores[k] : null; }); }); });
       var allT=[]; T.forEach(function(t){ t.forEach(function(v){ if(v!=null) allT.push(v); }); });
-      var panel=mean(allT), TR=T.map(ranks), ST=T.map(standing), SK=S.map(function(a){ return a.map(standing); });
+      var panel=mean(allT), PL=T.map(compRank), ST=T.map(standing), SK=S.map(function(a){ return a.map(standing); });
       // who gave each participant's highest / lowest total (the official average drops both), where 3+ totals exist
       var hi=J.map(function(){ return 0; }), lo=hi.slice(), nTrim=0;
       rows.forEach(function(r,i){
@@ -451,34 +485,74 @@
       var cohort=C.map(function(c,k){ var v=[]; S.forEach(function(a){ a[k].forEach(function(x){ if(x!=null) v.push(x); }); });
         return { label:c.label, max:c.max, avg:mean(v), pct:v.length ? mean(v)/c.max*100 : null }; });
       var judges=J.map(function(name,j){
-        var t=T[j].filter(nn), a=[], b=[];
+        var t=T[j].filter(nn), a=[], b=[], flat=0;
         rows.forEach(function(r,i){ if(T[j][i]==null) return;
+          var sc=use(r,j).scores; if(Math.max.apply(null,sc)-Math.min.apply(null,sc)<=1) flat++;   // same number on every criterion (±1)
           var o=[]; T.forEach(function(x,k){ if(k!==j && x[i]!=null) o.push(x[i]); });
           if(o.length){ a.push(T[j][i]); b.push(mean(o)); } });
         return { name:name, n:t.length, avg:mean(t), diff:t.length ? mean(t)-panel : null, sd:sd(t),
-          min:t.length ? Math.min.apply(null,t) : null, max:t.length ? Math.max.apply(null,t) : null, hi:hi[j], lo:lo[j],
+          min:t.length ? Math.min.apply(null,t) : null, max:t.length ? Math.max.apply(null,t) : null, hi:hi[j], lo:lo[j], flat:flat,
           agree:a.length>=5 ? pearson(ranks(a), ranks(b)) : null,          // Spearman vs the other judges' average
           critPct:C.map(function(c,k){ var v=S[j][k].filter(nn); return v.length ? mean(v)/c.max*100 : null; }) };
       });
       var cands=rows.map(function(r,i){
         var used=[]; J.forEach(function(_,j){ var x=use(r,j); if(x) used.push(x); });
-        var st=ST.map(function(x){ return x[i]; }).filter(nn), jr=TR.map(function(x){ return x[i]; }).filter(nn);
+        var st=ST.map(function(x){ return x[i]; }).filter(nn), pl=PL.map(function(x){ return x[i]; }).filter(nn);
         return { seq:r.seq, name:r.name, company:r.company, semiSeq:r.semiSeq||null, official:r.average, n:used.length,
           blank:r.perJudge.some(function(x){ return x.locked && x.scores && x.total===0; }),
           raw:used.length ? mean(used.map(function(x){ return x.total; })) : null,
           standing:st.length ? mean(st) : null,
+          spread:st.length>1 ? Math.max.apply(null,st)-Math.min.apply(null,st) : null,
           above:judges.filter(function(jx,j){ return T[j][i]!=null && T[j][i]>jx.avg; }).length,
-          rankMin:jr.length ? Math.min.apply(null,jr) : null, rankMax:jr.length ? Math.max.apply(null,jr) : null,
+          rankMin:pl.length ? Math.min.apply(null,pl) : null, rankMax:pl.length ? Math.max.apply(null,pl) : null,
+          perJudge:J.map(function(_,j){ return { total:T[j][i], standing:ST[j][i], place:PL[j][i] }; }),
           crit:C.map(function(c,k){ var v=used.map(function(x){ return x.scores[k]; }), s=SK.map(function(a){ return a[k][i]; }).filter(nn);
             return { avg:v.length ? mean(v) : null, standing:s.length ? mean(s) : null }; }) };
       });
       var offR=compRank(cands.map(function(c){ return c.official; })), stR=compRank(cands.map(function(c){ return c.standing; }));
       var critR=C.map(function(_,k){ return compRank(cands.map(function(c){ return c.crit[k].avg; })); });
       cands.forEach(function(c,i){ c.rank=offR[i]; c.standingRank=stR[i]; c.crit.forEach(function(x,k){ x.rank=critR[k][i]; }); });
+      // the result read ten ways: four ways of averaging every judge, then the official rule without each judge in turn
+      var K=d.round==='final' ? 1 : (d.finalSize||4);
+      var lockedT=J.map(function(_,j){ return rows.map(function(r){ var x=r.perJudge[j]; return x && x.locked && x.scores ? x.total : null; }); });
+      var views=[
+        { name:'Official', s:cands.map(function(c){ return c.official; }) },
+        { name:'Plain average', s:cands.map(function(c){ return c.raw; }) },
+        { name:'Median', s:cands.map(function(c){ var t=c.perJudge.map(function(p){ return p.total; }).filter(nn); return t.length ? median(t) : null; }) },
+        { name:'Relative', s:cands.map(function(c){ return c.standing; }) }
+      ].concat(J.map(function(name,j){ return { name:'Without '+name, without:name, s:rows.map(function(r,i){
+        var t=[]; lockedT.forEach(function(x,k){ if(k!==j && x[i]!=null) t.push(x[i]); }); return t.length>=J.length-1 ? trimmedOf(t) : null; }) }; }));
+      views.forEach(function(v){ v.top=topSet(v.s, K); v.rank=compRank(v.s); });
+      cands.forEach(function(c,i){ c.topIn=views.filter(function(v){ return v.top.indexOf(i)>=0; }).length; });
+      var po=cands.filter(function(c){ return c.standing!=null; });
       return { n:rows.length, judges:judges, panel:panel, medSd:median(judges.filter(function(x){ return x.n>=2; }).map(function(x){ return x.sd; })),
-        nTrim:nTrim, allScored:allScored, cohort:cohort, cands:cands, blanks:blanks, zeros:zeros };
+        nTrim:nTrim, allScored:allScored, cohort:cohort, cands:cands, blanks:blanks, zeros:zeros, K:K, views:views,
+        complete:rows.length>0 && cands.every(function(c){ return c.official!=null; }),
+        orderR:po.length>=6 ? pearson(po.map(function(c){ return c.seq; }), po.map(function(c){ return c.standing; })) : null };   // pitch order vs relative
     }
-    return { compute:compute };
+    // per criterion: the finalists' average vs everyone else's (Semifinal)
+    function finalistGap(sIns, fseqs){
+      var f=sIns.cands.filter(function(c){ return fseqs.indexOf(c.seq)>=0; }), o=sIns.cands.filter(function(c){ return fseqs.indexOf(c.seq)<0; });
+      if(!f.length || !o.length) return null;
+      var avg=function(list,k){ var v=list.map(function(c){ return c.crit[k].avg; }).filter(nn); return v.length ? mean(v) : null; };
+      return sIns.cohort.map(function(_,k){ var a=avg(f,k), b=avg(o,k); return { fin:a, rest:b, gap:a!=null && b!=null ? a-b : null }; });
+    }
+    // Semifinal → Final for the same people: each finalist's change, and how each judge's scoring of them moved
+    function story(sIns, fIns){
+      var semiOf=function(fc){ return sIns.cands.filter(function(c){ return c.seq===fc.semiSeq; })[0] || null; };
+      var people=fIns.cands.map(function(fc){ var sc=semiOf(fc);
+        return { name:fc.name, semi:sc ? sc.raw : null, fin:fc.raw, change:sc && sc.raw!=null && fc.raw!=null ? fc.raw-sc.raw : null,
+          crit:fc.crit.map(function(x,k){ return sc && x.avg!=null && sc.crit[k].avg!=null ? x.avg-sc.crit[k].avg : null; }) }; });
+      var judges=fIns.judges.map(function(jf,j){
+        var sj=-1; sIns.judges.forEach(function(x,k){ if(x.name===jf.name) sj=k; });
+        var a=[], b=[], ft=fIns.cands.map(function(fc){ return fc.perJudge[j].total; }), mx=Math.max.apply(null, ft.filter(nn));
+        fIns.cands.forEach(function(fc,i){ var sc=semiOf(fc), st=sc && sj>=0 ? sc.perJudge[sj].total : null; if(ft[i]!=null && st!=null){ a.push(st); b.push(ft[i]); } });
+        return { name:jf.name, semi:a.length ? mean(a) : null, fin:b.length ? mean(b) : null, shift:a.length ? mean(b)-mean(a) : null,
+          first:ft.filter(nn).length ? fIns.cands.filter(function(fc,i){ return ft[i]===mx; }).map(function(fc){ return fc.name; }) : [] };
+      });
+      return { people:people, judges:judges };
+    }
+    return { compute:compute, finalistGap:finalistGap, story:story };
   })();
   /* insights-calc:end */
 
@@ -488,12 +562,18 @@
   function f2(v){ return v==null ? '–' : String(Math.round(v*100)/100); }
   function sgn(v){ var x=Math.round(v*10)/10; return x===0 ? '±0' : (x>0?'+':'−')+Math.abs(x).toFixed(1); }
   function ordinal(n){ var s=['th','st','nd','rd'], v=n%100; return n+(s[(v-20)%10]||s[v]||s[0]); }
+  function andList(a){ return a.length<2 ? (a[0]||'') : a.slice(0,-1).join(', ')+' and '+a[a.length-1]; }
+  function orList(a){ return a.length<2 ? (a[0]||'') : a.slice(0,-1).join(', ')+' or '+a[a.length-1]; }
+  function jshort(n){ var p=String(n).trim().split(/\s+/); return /^(dr|prof|ir)\.?$/i.test(p[0]) && p[1] ? p[0]+' '+p[1] : p[0]; }
   function byRank(list){ return list.slice().sort(function(a,b){ return (a.rank||999)-(b.rank||999) || a.seq-b.seq; }); }
   function placeOf(c, cands){   // "2nd", "joint 2nd"
     var tied=cands.filter(function(x){ return x.official!=null && x.official===c.official; }).length>1;
     return c.rank ? (tied?'joint ':'')+ordinal(c.rank) : '–';
   }
   function agreeLabel(r){ return r>=0.6 ? 'high' : r>=0.35 ? 'moderate' : 'low'; }
+  function byPct(ins){ return ins.cohort.map(function(c,k){ return { k:k, p:c.pct }; }).filter(function(x){ return x.p!=null; }).sort(function(a,b){ return b.p-a.p; }); }
+  function gapOrder(gap, C){ return gap ? gap.map(function(x,k){ return { k:k, g:x.gap, r:x.gap==null ? null : x.gap/C[k].max }; }).filter(function(x){ return x.r!=null; }).sort(function(a,b){ return b.r-a.r; }) : []; }
+  function sec(id, title, lead, body){ return '<section class="ins-sec" id="'+id+'"><h2>'+title+'</h2>'+(lead?'<p class="lead">'+lead+'</p>':'')+body+'</section>'; }
 
   function judgeStyle(j, ins, crit){
     if(!j.n) return 'No locked scores yet.';
@@ -512,13 +592,123 @@
       if(j.agree>=0.6) bits.push('put candidates in much the same order as the other judges');
       else if(j.agree<0.35) bits.push('often put candidates in a different order from the other judges');
     }
+    if(j.n>=5 && j.flat>=j.n*0.4) bits.push('gave nearly the same number on every criterion in '+j.flat+' of '+j.n+' sheets, so their criteria breakdown says little');
     var k=-1, gap=0; j.critPct.forEach(function(p,i){ var g=p-ins.cohort[i].pct; if(p!=null && Math.abs(g)>Math.abs(gap)){ gap=g; k=i; } });
     if(k>=0 && Math.abs(gap)>=8) bits.push('much '+(gap>0?'more generous':'stricter')+' than the panel on '+cshort(crit[k])+' ('+Math.round(j.critPct[k])+'% vs '+Math.round(ins.cohort[k].pct)+'% of the points)');
     return bits.join('; ')+'.';
   }
 
+  /* --- key takeaways: the few things worth knowing first, in plain words --- */
+  function takeaways(ins, d, rd, ctx){
+    var L=[], V=ins.views.length, C=d.criteria, nm=function(c){ return c.name; };
+    if(rd==='semi' && ins.complete){
+      var sure=byRank(ins.cands.filter(function(c){ return c.topIn===V; }));
+      var maybe=ins.cands.filter(function(c){ return c.topIn>0 && c.topIn<V; }).sort(function(a,b){ return b.topIn-a.topIn || (a.rank||99)-(b.rank||99); });
+      if(sure.length) L.push('<b>'+esc(andList(sure.map(nm)))+'</b> make the Top '+ins.K+' however you read the scores (all '+V+' ways in “How close was it”).');
+      if(maybe.length){ var from=sure.length+1, spots=from<ins.K ? ordinal(from)+'–'+ordinal(ins.K)+' spots were' : (from===ins.K ? ordinal(from)+' spot was' : 'Top '+ins.K+' was');
+        L.push('The '+spots+' close: '+maybe.map(function(c){ return esc(c.name)+' ('+c.topIn+' of '+V+')'; }).join(', ')+'.'); }
+    }
+    if(rd==='final' && ins.complete && ctx.story){
+      var off=ins.views[0].top, agg=ins.views.slice(0,4), loo=ins.views.slice(4);
+      var same=function(v){ return v.top.length===1 && off.length===1 && v.top[0]===off[0]; };
+      if(off.length===1){
+        var w=ins.cands[off[0]], next=byRank(ins.cands)[1];
+        L.push(agg.every(same) ? '<b>'+esc(w.name)+'</b> wins under every way of averaging all '+d.judges.length+' judges (official, plain average, median, relative).'
+          : '<b>'+esc(w.name)+'</b> wins on the official average, but not under every way of averaging: '+agg.filter(function(v){ return !same(v); }).map(function(v){ return v.name.toLowerCase()+' → '+esc(andList(v.top.map(function(i){ return ins.cands[i].name; }))); }).join('; ')+'.');
+        if(next && next.official!=null) L.push('Official margin over 2nd place ('+esc(next.name)+'): '+f2(w.official-next.official)+' points.');
+        var flips=loo.filter(function(v){ return !same(v); });
+        if(flips.length){ var by={}; flips.forEach(function(v){ var k=andList(v.top.map(function(i){ return ins.cands[i].name; })); (by[k]=by[k]||[]).push(jshort(v.without)); });
+          L.push('It hinged on the panel: '+Object.keys(by).map(function(k){ return 'without '+esc(orList(by[k]))+', '+esc(k)+' would have won'; }).join('; ')+'.'); }
+        else L.push('Removing any single judge doesn\'t change the winner.');
+      }
+      var firsts={}, tiedJ=[];
+      ctx.story.judges.forEach(function(j){ if(j.first.length===1) (firsts[j.first[0]]=firsts[j.first[0]]||[]).push(jshort(j.name)); else if(j.first.length>1) tiedJ.push(jshort(j.name)+' put '+j.first.length+' finalists joint first'); });
+      var fk=Object.keys(firsts);
+      if(fk.length===1 && !tiedJ.length) L.push('Every judge ranked '+esc(fk[0])+' first.');
+      else if(fk.length) L.push('Judges\' first choices were split: '+fk.sort(function(a,b){ return firsts[b].length-firsts[a].length; }).map(function(k){ return esc(k)+' ('+esc(andList(firsts[k]))+')'; }).join(', ')+(tiedJ.length?'; '+esc(andList(tiedJ)):'')+'.');
+      var pp=ctx.story.people.filter(function(p){ return p.change!=null; }).sort(function(a,b){ return b.change-a.change; });
+      if(pp.length){ var up=pp[0], dn=pp[pp.length-1];
+        if(up.change>0.4) L.push(esc(up.name)+' improved most from the Semifinal ('+sgn(up.change)+' average'+(up.crit.every(function(x){ return x!=null && x>0; })?', up on every criterion':'')+')'+(dn.change<-0.4?'; '+esc(dn.name)+' dropped ('+sgn(dn.change)+').':'.')); }
+      var sh=ctx.story.judges.filter(function(j){ return j.shift!=null && Math.abs(j.shift)>=5; }).sort(function(a,b){ return b.shift-a.shift; });
+      if(sh.length) L.push('Judges\' standards shifted between rounds — for the same four people: '+sh.map(function(j){ return esc(jshort(j.name))+' '+sgn(j.shift); }).join(', ')+' in the Final.');
+    }
+    ins.judges.forEach(function(j){
+      if(ins.nTrim<4 || rd==='final') return;
+      var lo=j.lo>=ins.nTrim*0.5, hi=!lo && j.hi>=ins.nTrim*0.5, m=lo?j.lo:j.hi;
+      if(lo||hi) L.push(esc(j.name)+' gave the '+(lo?'lowest':'highest')+' total to '+m+' of '+ins.nTrim+' candidates, so their scores '+(m>=ins.nTrim*0.8?'almost never':'often didn\'t')+' count in the official average.');
+    });
+    if(rd==='semi') ins.judges.forEach(function(j){ if(j.n>=5 && j.flat>=j.n*0.4) L.push(esc(j.name)+' gave nearly the same number on every criterion in '+j.flat+' of '+j.n+' sheets — their scores say little about strengths by criterion.'); });
+    var o=byPct(ins);
+    if(o.length>1){ var maxW=Math.max.apply(null,C.map(function(c){ return c.max; })), low=C[o[o.length-1].k];
+      L.push('Strongest area '+(rd==='final'?'among the finalists':'across the cohort')+': '+esc(C[o[0].k].label)+' ('+Math.round(o[0].p)+'% of the points). Weakest: '+esc(low.label)+' ('+Math.round(o[o.length-1].p)+'%)'+(low.max===maxW?', also the criterion worth the most points':'')+'.'); }
+    var g=gapOrder(ctx.gap, C);
+    if(rd==='semi' && g.length>1) L.push('What set the finalists apart most: '+esc(C[g[0].k].label)+' ('+sgn(g[0].g)+' points over the others) and '+esc(C[g[1].k].label)+' ('+sgn(g[1].g)+').');
+    if(rd==='semi'){
+      var dv=ins.cands.filter(function(c){ return c.spread!=null; }).sort(function(a,b){ return b.spread-a.spread; }).slice(0,2);
+      if(dv.length && dv[0].spread>=70) L.push('The judges disagreed most about '+esc(andList(dv.map(nm)))+' — some placed them near the top, others near the bottom.');
+      if(ins.orderR!=null) L.push(Math.abs(ins.orderR)<0.3 ? 'Speaking order made no noticeable difference to how candidates were rated.'
+        : (ins.orderR>0?'Later':'Earlier')+' speakers tended to be rated higher — worth keeping in mind when setting the order next time.');
+    }
+    if(ins.blanks.length || ins.zeros.length) L.push('<b>Check before sharing feedback:</b> '+[ins.blanks.length ? ins.blanks.length+' blank score sheet'+(ins.blanks.length>1?'s':'') : '',
+      ins.zeros.length ? ins.zeros.length+' zero'+(ins.zeros.length>1?'s':'')+' on a criterion' : ''].filter(Boolean).join(' and ')+' — see “How each judge scored”.');
+    if(!L.length) return '';
+    return '<section class="ins-sec take"><h2>Key takeaways</h2><ul>'+L.map(function(x){ return '<li>'+x+'</li>'; }).join('')+'</ul></section>';
+  }
+
+  /* --- how close was it: the same scores read ten ways --- */
+  function closeSection(ins, d, rd, fseqs, cut){
+    var title='How close was it?';
+    if(!ins.complete) return sec('sec-close', title, 'Available once every '+(rd==='final'?'finalist':'candidate')+' has all judges\' scores locked.', '');
+    var V=ins.views.length, offs=ins.cands.filter(function(c){ return c.official!=null; }), vals=offs.map(function(c){ return c.official; });
+    var lo=Math.floor(Math.min.apply(null,vals)/5)*5, hi=Math.ceil(Math.max.apply(null,vals)/5)*5; if(hi-lo<10){ lo-=5; hi+=5; }
+    var pos=function(v){ return ((v-lo)/(hi-lo)*100).toFixed(2); }, stack={}, ticks='';
+    for(var t=lo;t<=hi;t+=5) ticks+='<span class="tk" style="left:'+pos(t)+'%">'+t+'</span>';
+    var isFin=function(c){ return rd==='final' ? c.rank===1 : fseqs.indexOf(c.seq)>=0; };
+    var dots=byRank(offs).reverse().map(function(c){ var lv=stack[c.official]=(stack[c.official]||0)+1;
+      return '<span class="sd'+(isFin(c)?' fin':'')+'" style="left:'+pos(c.official)+'%;bottom:'+(8+(lv-1)*13)+'px" title="'+esc(c.name)+' — '+c.official+'"></span>'; }).join('');
+    var strip='<div class="sstrip">'+dots+(rd==='semi' && cut!=null?'<span class="scut" style="left:'+pos(cut)+'%"><em>Final cut '+cut+'</em></span>':'')+'<div class="saxis">'+ticks+'</div></div>'
+      +'<p class="co" style="margin:2px 0 12px">Each dot is one '+(rd==='final'?'finalist':'candidate')+'\'s official score; <span class="sd-key fin"></span> = '+(rd==='final'?'winner':'finalists')+'. Hover a dot for the name.</p>';
+    // the Final shows every finalist; the Semifinal only those who make the Top K in at least one view
+    var cont=ins.cands.filter(function(c){ return rd==='final' || c.topIn>0; }).sort(function(a,b){ return b.topIn-a.topIn || (a.rank||99)-(b.rank||99); });
+    var cell=function(v,i,c,fmt){ var x=v.s[i]; return '<td>'+(x==null?'–':fmt(x))+' <span class="co">#'+(v.rank[i]||'–')+'</span></td>'; };
+    var idx=function(c){ return ins.cands.indexOf(c); };
+    var head='<tr><th class="name">'+(rd==='final'?'Finalist':'Candidate')+'</th><th>Official</th><th>Plain average</th><th>Median</th><th>Relative</th><th>'+(rd==='final'?'Wins in':'Top '+ins.K+' in')+'</th></tr>';
+    var body=cont.map(function(c){ var i=idx(c);
+      return '<tr><td class="name"><div class="nm">'+esc(c.name)+'</div></td>'+cell(ins.views[0],i,c,function(x){ return x; })+cell(ins.views[1],i,c,f2)+cell(ins.views[2],i,c,f2)+cell(ins.views[3],i,c,function(x){ return Math.round(x); })
+        +'<td><b>'+c.topIn+'</b> of '+V+'</td></tr>'; }).join('');
+    var offTop=ins.views[0].top, nochange=[], lines=[];
+    ins.views.slice(4).forEach(function(v){
+      var inn=v.top.filter(function(i){ return offTop.indexOf(i)<0; }), out=offTop.filter(function(i){ return v.top.indexOf(i)<0; });
+      if(!inn.length && !out.length){ nochange.push(jshort(v.without)); return; }
+      var names=function(a){ return esc(andList(a.map(function(i){ return ins.cands[i].name; }))); };
+      lines.push('<li>Without <b>'+esc(v.without)+'</b>: '+(rd==='final' ? names(v.top)+' would win' : names(inn)+' in'+(out.length?', '+names(out)+' out':''))+'.</li>');
+    });
+    if(nochange.length) lines.push('<li>Without '+esc(orList(nochange))+': no change.</li>');
+    return sec('sec-close', title,
+      'The official result stands — this shows how much it depended on the method and on individual judges. The same scores are read '+V+' ways: the official average, a plain average of all judges, the median judge, the relative score, and the official rule with each judge left out in turn (blank sheets are left out of the plain average, median and relative).',
+      strip+'<div class="tablewrap"><table class="ins close">'+head+body+'</table></div>'
+      +'<p class="mini-h">If one judge had been absent (official rule on the others)</p><ul class="loo">'+lines.join('')+'</ul>');
+  }
+
+  /* --- Semifinal → Final (Final view only) --- */
+  function storySection(st, d){
+    var C=d.criteria;
+    var ph='<tr><th class="name">Finalist</th><th>Semifinal avg</th><th>Final avg</th><th>Change</th><th>Biggest gain</th><th>Biggest drop</th></tr>';
+    var pb=st.people.slice().sort(function(a,b){ return (b.change||0)-(a.change||0); }).map(function(p){
+      var o=p.crit.map(function(x,k){ return { k:k, x:x }; }).filter(function(x){ return x.x!=null; }).sort(function(a,b){ return b.x-a.x; });
+      var up=o[0], dn=o[o.length-1];
+      return '<tr><td class="name"><div class="nm">'+esc(p.name)+'</div></td><td>'+f1(p.semi)+'</td><td><b>'+f1(p.fin)+'</b></td><td class="'+(p.change>0.4?'pos':p.change<-0.4?'neg':'')+'">'+(p.change==null?'–':sgn(p.change))+'</td>'
+        +'<td>'+(up && up.x>0 ? cshort(C[up.k])+' '+sgn(up.x) : '–')+'</td><td>'+(dn && dn.x<0 ? cshort(C[dn.k])+' '+sgn(dn.x) : '–')+'</td></tr>'; }).join('');
+    var jh='<tr><th class="name">Judge</th><th>Same four, Semifinal</th><th>Final</th><th>Shift</th><th>Ranked first in the Final</th></tr>';
+    var jb=st.judges.map(function(j){ return '<tr><td class="name">'+esc(j.name)+'</td><td>'+f1(j.semi)+'</td><td>'+f1(j.fin)+'</td><td class="'+(j.shift>=5?'pos':j.shift<=-5?'neg':'')+'">'+(j.shift==null?'–':sgn(j.shift))+'</td>'
+      +'<td>'+(j.first.length>1?'tie: ':'')+esc(j.first.map(function(n){ return n.split(' ')[0]; }).join(' = ')||'–')+'</td></tr>'; }).join('');
+    return sec('sec-story', 'From Semifinal to Final',
+      'Plain averages of all judges, so the two rounds compare like for like. The second table shows whether each judge scored the same four people higher or lower once it was the Final.',
+      '<div class="tablewrap"><table class="ins">'+ph+pb+'</table></div><div class="tablewrap" style="margin-top:12px"><table class="ins">'+jh+jb+'</table></div>');
+  }
+
   function judgeSection(ins, d){
-    var cl=function(v){ return Math.max(0,Math.min(100,v)); };
+    var cl=function(v){ return Math.max(0,Math.min(100,v)); }, C=d.criteria;
     var cards=ins.judges.map(function(j){
       var strip=j.n ? '<div class="strip" title="Totals this judge gave, on the 0–100 scale. Dot = their average, line = panel average.">'
         +'<span class="rng" style="left:'+cl(j.min)+'%;width:'+Math.max(1,cl(j.max)-cl(j.min))+'%"></span>'
@@ -528,33 +718,59 @@
         +'<span>Range <b>'+(j.n?j.min+'–'+j.max:'–')+'</b></span>'
         +'<span>Highest / lowest <b>'+j.hi+' / '+j.lo+'</b></span>'
         +'<span>Agreement <b>'+(j.agree==null?'–':agreeLabel(j.agree))+'</b></span></div>'
-        +strip+'<p class="jstyle">'+esc(judgeStyle(j, ins, d.criteria))+'</p></div>';
+        +strip+'<p class="jstyle">'+esc(judgeStyle(j, ins, C))+'</p></div>';
     }).join('');
+    var heat='<p class="mini-h">How each judge used the criteria</p><div class="tablewrap"><table class="ins heat"><tr><th class="name">Judge</th>'
+      +C.map(function(c){ return '<th>'+esc(cshort(c))+'</th>'; }).join('')+'<th>Same number on every criterion</th></tr>'
+      +ins.judges.map(function(j){ return '<tr><td class="name">'+esc(j.name)+'</td>'+j.critPct.map(function(p,k){ var g=p==null ? null : p-ins.cohort[k].pct;
+          return '<td class="'+(g==null?'':g>=8?'h2':g>=3?'h1':g<=-8?'l2':g<=-3?'l1':'')+'">'+(g==null?'–':(Math.round(g)>0?'+':Math.round(g)<0?'−':'')+Math.abs(Math.round(g)))+'</td>'; }).join('')
+        +'<td'+(j.n>=5 && j.flat>=j.n*0.4?' class="l1"':'')+'>'+j.flat+' of '+j.n+'</td></tr>'; }).join('')
+      +'</table></div><p class="co" style="margin-top:6px">Each criterion cell: how much higher (+) or lower (−) than the whole panel this judge scored it, in % of that criterion\'s points. The last column counts sheets where all five criteria got (nearly) the same number.</p>';
     var checks=ins.blanks.map(function(b){ return '<li><b>'+esc(b.judge)+'</b> → '+esc(b.name)+': blank sheet (all 0). The official average treated it as the lowest score (so it was dropped and the next-lowest score stayed in). It is left out of these insights — check whether this pitch was actually scored.</li>'; })
       .concat(ins.zeros.map(function(z){ return '<li><b>'+esc(z.judge)+'</b> → '+esc(z.name)+': 0 for '+esc(z.label)+' — check it was intended.</li>'; }));
-    return '<section class="ins-sec"><h2>How each judge scored</h2>'
-      +'<p class="lead">The panel average was <b>'+f1(ins.panel)+'</b> per pitch. '
+    return sec('sec-judges', 'How each judge scored',
+      'The panel average was <b>'+f1(ins.panel)+'</b> per pitch. '
       +(ins.allScored?'Every judge scored every candidate, so a strict or generous judge moved everyone by the same amount. What judge style does change: a judge with a narrow range separates candidates less, and the official average drops each candidate\'s highest and lowest total — so a judge who is always the strictest or most generous rarely counts. ':'')
-      +'“Highest / lowest” = how often this judge gave a candidate\'s top or bottom total. “Agreement” = how closely their order of candidates matched the other judges\'.</p>'
-      +'<div class="jgrid">'+cards+'</div>'
-      +(checks.length?'<div class="lu-warn"><b>Check before sharing feedback</b><ul>'+checks.join('')+'</ul></div>':'')
-      +'</section>';
+      +'“Highest / lowest” = how often this judge gave a candidate\'s top or bottom total. “Agreement” = how closely their order of candidates matched the other judges\'.',
+      '<div class="jgrid">'+cards+'</div>'+heat
+      +(checks.length?'<div class="lu-warn"><b>Check before sharing feedback</b><ul>'+checks.join('')+'</ul></div>':''));
   }
 
-  function cohortSection(ins, d, rd, cut){
-    var o=ins.cohort.map(function(c,k){ return { k:k, p:c.pct }; }).filter(function(x){ return x.p!=null; }).sort(function(a,b){ return b.p-a.p; });
+  /* --- where the judges disagreed: each judge's placement of a candidate on one line --- */
+  function disagreeSection(ins){
+    var dv=ins.cands.filter(function(c){ return c.spread!=null; }).sort(function(a,b){ return b.spread-a.spread; }).slice(0,5);
+    if(!dv.length) return '';
+    var rows=dv.map(function(c){
+      var dots=c.perJudge.map(function(p,j){ if(p.standing==null) return ''; var jx=ins.judges[j];
+        return '<span class="jd" style="left:'+p.standing.toFixed(1)+'%" title="'+esc(jx.name)+': '+p.total+' — placed '+ordinal(p.place)+' of '+jx.n+'">'+esc(jshort(jx.name).replace(/^Dr\.?\s*/,'').charAt(0))+'</span>'; }).join('');
+      return '<div class="dis"><div class="dis-n"><div class="nm">'+esc(c.name)+'</div><div class="co">placed '+ordinal(c.rankMin)+' to '+ordinal(c.rankMax)+' by individual judges</div></div>'
+        +'<div class="dis-t"><span class="mid"></span>'+dots+'</div></div>'; }).join('');
+    return sec('sec-dis', 'Where the judges disagreed',
+      'Each letter is one judge (hover for the name and score), placed by where that judge ranked the candidate among everyone they scored: left = that judge\'s lowest, right = their favourite. A wide spread means the pitch landed very differently with different judges — worth knowing before giving feedback.',
+      '<div class="dis-wrap"><div class="dis-ax"><span>judge\'s lowest</span><span>middle</span><span>judge\'s favourite</span></div>'+rows+'</div>');
+  }
+
+  function cohortSection(ins, d, rd, cut, gap){
+    var o=byPct(ins), C=d.criteria;
     var bars=ins.cohort.map(function(c){ return '<div class="bar"><span>'+esc(c.label)+'</span><span class="tr"><span class="fl" style="width:'+Math.round(c.pct||0)+'%"></span></span>'
       +'<span class="v">'+f1(c.avg)+' / '+c.max+' · '+Math.round(c.pct||0)+'%</span></div>'; }).join('');
     var lead='';
     if(o.length>1){
-      var top=d.criteria[o[0].k], low=d.criteria[o[o.length-1].k], maxW=Math.max.apply(null,d.criteria.map(function(c){ return c.max; }));
+      var top=C[o[0].k], low=C[o[o.length-1].k], maxW=Math.max.apply(null,C.map(function(c){ return c.max; }));
       lead='Strongest area: <b>'+esc(top.label)+'</b> ('+Math.round(o[0].p)+'% of the points available). Weakest: <b>'+esc(low.label)+'</b> ('+Math.round(o[o.length-1].p)+'%)'
         +(low.max===maxW?' — also the criterion worth the most points ('+low.max+'), so it is the biggest lever for most candidates. ':'. ');
     }
     var offs=ins.cands.map(function(c){ return c.official; }).filter(function(v){ return v!=null; }).sort(function(a,b){ return a-b; });
     if(offs.length) lead+='Official averages ran from '+offs[0]+' to '+offs[offs.length-1]+(offs.length>2?' (middle '+f2(offs.length%2?offs[offs.length>>1]:(offs[offs.length/2-1]+offs[offs.length/2])/2)+')':'')+'.'
       +(rd==='semi' && cut!=null?' The Final cut was '+cut+'.':'');
-    return '<section class="ins-sec"><h2>Where the '+(rd==='final'?'finalists':'cohort')+' stood</h2><p class="lead">'+lead+'</p><div class="bars">'+bars+'</div></section>';
+    var apart='';
+    if(rd==='semi' && gap){
+      var g=gapOrder(gap, C), top2=g.slice(0,2).map(function(x){ return x.k; });
+      apart='<p class="mini-h">What set the finalists apart</p><div class="tablewrap"><table class="ins"><tr><th class="name">Criterion</th><th>Finalists</th><th>Everyone else</th><th>Difference</th></tr>'
+        +C.map(function(c,k){ var x=gap[k]; return '<tr'+(top2.indexOf(k)>=0?' class="hl"':'')+'><td class="name">'+esc(c.label)+'</td><td>'+f1(x.fin)+' / '+c.max+'</td><td>'+f1(x.rest)+' / '+c.max+'</td><td><b>'+(x.gap==null?'–':sgn(x.gap))+'</b> <span class="co">('+(x.gap==null?'–':Math.round(x.gap/c.max*100))+'% of its points)</span></td></tr>'; }).join('')
+        +'</table></div><p class="co" style="margin-top:6px">Highlighted: the two criteria where the finalists were furthest ahead, relative to the points available.</p>';
+    }
+    return sec('sec-cohort', 'Where the '+(rd==='final'?'finalists':'cohort')+' stood', lead, '<div class="bars">'+bars+'</div>'+apart);
   }
 
   function candSection(ins, d, rd){
@@ -573,11 +789,11 @@
         +c.crit.map(function(x){ return '<td class="c'+(x.standing!=null && x.standing>=67?' s-hi':x.standing!=null && x.standing<=33?' s-lo':'')+'" title="'+(x.rank?ordinal(x.rank)+' of '+ins.n:'')+'">'+f1(x.avg)+'</td>'; }).join('')
         +'<td><button type="button" class="lnk">Feedback ›</button></td></tr>';
     }).join('');
-    return '<section class="ins-sec"><h2>All '+(rd==='final'?'finalists':'candidates')+' — more averages</h2>'
-      +'<p class="lead"><b>Official</b> = the announced score (judges\' totals, highest and lowest dropped, averaged). '
+    return sec('sec-cands', 'All '+(rd==='final'?'finalists':'candidates')+' — more averages',
+      '<b>Official</b> = the announced score (judges\' totals, highest and lowest dropped, averaged). '
       +'<b>Relative</b> (0–100) = where each judge placed the candidate among everyone that judge scored — 100 is that judge\'s favourite, 0 their lowest — averaged over the judges, so a strict judge counts the same as a generous one (#&nbsp;= its order). It is for understanding performance, not for re-ranking. '
-      +'Criteria = average of all judges; <span style="background:#e3f6ee;padding:0 4px;border-radius:4px">green</span> = among the strongest on that criterion, <span style="background:#fdeef1;padding:0 4px;border-radius:4px">red</span> = among the weakest. Tap a row for feedback.</p>'
-      +'<div class="tablewrap"><table class="ins">'+head+body+'</table></div></section>';
+      +'Criteria = average of all judges; <span style="background:#e3f6ee;padding:0 4px;border-radius:4px">green</span> = among the strongest on that criterion, <span style="background:#fdeef1;padding:0 4px;border-radius:4px">red</span> = among the weakest. Tap a row for feedback.',
+      '<div class="tablewrap"><table class="ins">'+head+body+'</table></div>');
   }
 
   // strengths = criteria where the judges placed them high relative to the others (60+); development = below the middle (<50).
@@ -591,52 +807,84 @@
     return { str:str, strOnlyRelative:strOnlyRelative, dev:dev, devAboveMiddle:devAboveMiddle };
   }
 
-  function feedbackText(sc, fc, sIns, fIns, C, isFinalist, cut){
-    var L=[], sw=strengthsOf(sc), lab=function(x){ return C[x.k].label; };
+  // how much the judges agreed on one candidate, from each judge's placement. Like the official average, it looks past the
+  // single highest and lowest placement, so one judge far from the rest doesn't make the whole panel look "split".
+  function agreementOf(c, n){
+    var p=c.perJudge.map(function(x){ return x.place; }).filter(function(v){ return v!=null; }).sort(function(a,b){ return a-b; });
+    if(p.length<2) return null;
+    var q=n/4, a=p[0], z=p[p.length-1], all='individual placements ranged from '+ordinal(a)+' to '+ordinal(z);
+    if(z-a<=q) return { text:'The judges largely agreed on your pitch: every judge placed you between '+ordinal(a)+' and '+ordinal(z)+' of '+n+'.', tile:'judges largely agreed' };
+    var m1=p.length>=4 ? p[1] : a, m2=p.length>=4 ? p[p.length-2] : z;
+    if(m2-m1>=n/2) return { text:'Your pitch divided the judges: '+all+' of '+n+'.', tile:'judges were split' };
+    if(p.length<4) return { text:'Individual judges placed you between '+ordinal(a)+' and '+ordinal(z)+' of '+n+'.', tile:'some spread between judges' };
+    return { text:'Most judges placed you between '+ordinal(m1)+' and '+ordinal(m2)+' of '+n+' ('+all+').', tile:m2-m1<=q ? 'most judges close together' : 'some spread between judges' };
+  }
+
+  // everything the feedback for one candidate needs (also used for the "all feedback" download)
+  function feedbackFor(seq, X){
+    var sc=X.sIns.cands.filter(function(c){ return c.seq===seq; })[0]; if(!sc) return null;
+    var fc=X.fIns ? X.fIns.cands.filter(function(c){ return c.semiSeq===seq; })[0] || null : null;
+    var isFinalist=X.fseqs.indexOf(seq)>=0, C=X.C, sIns=X.sIns, sw=strengthsOf(sc), lab=function(x){ return C[x.k].label; };
+    var L=[];
     L.push('CYE Indonesia 2026 — scoring feedback');
     L.push(sc.name+(sc.company?' · '+sc.company:''));
     L.push('');
-    if(fc) L.push('Final: '+(fc.rank===1 && placeOf(fc,fIns.cands).indexOf('joint')<0 ? 'Winner' : placeOf(fc,fIns.cands)+' place')+' — official score '+fc.official+'/100.');
+    var finPlace=fc ? (fc.rank===1 && placeOf(fc,X.fIns.cands).indexOf('joint')<0 ? 'Winner' : placeOf(fc,X.fIns.cands)+' place') : null;
+    if(fc) L.push('Final: '+finPlace+' — official score '+fc.official+'/100.');
     L.push('Semifinal: '+placeOf(sc,sIns.cands)+' of '+sIns.n+' — official score '+(sc.official!=null?sc.official:'–')+'/100'+(isFinalist?', qualifying for the Final.':'.'));
-    if(!isFinalist && cut!=null && sc.official!=null) L.push('The Final cut was '+cut+', '+f2(cut-sc.official)+' points above your score.');
+    if(!isFinalist && X.cut!=null && sc.official!=null) L.push('The Final cut was '+X.cut+', '+f2(X.cut-sc.official)+' points above your score.');
     L.push('(Official score = the judges\' totals averaged after dropping the highest and the lowest.)');
     L.push('');
     if(sc.standing!=null) L.push('How the judges saw you: on average, each judge placed you ahead of '+Math.round(sc.standing)+'% of the other semifinalists, and '+sc.above+' of '+sc.n+' judges scored you above their own average.');
+    var ag=agreementOf(sc, sIns.n); if(ag) L.push(ag.text);
     L.push('');
     L.push('Semifinal scores by criterion (average of the judges · cohort average):');
     C.forEach(function(c,k){ L.push('• '+c.label+': '+f1(sc.crit[k].avg)+'/'+c.max+' · cohort '+f1(sIns.cohort[k].avg)); });
     L.push('');
     L.push((sw.strOnlyRelative?'Relative strength: ':'Strengths: ')+sw.str.map(lab).join(', ')+'.');
     L.push((sw.devAboveMiddle?'Room to grow: ':'To develop: ')+sw.dev.map(lab).join(', ')+(sw.devAboveMiddle?' (your lowest area, though still above the middle of the cohort).':'.'));
+    var k0=sw.dev[0] ? sw.dev[0].k : -1, mine=k0>=0 ? sc.crit[k0].avg : null, coh=k0>=0 ? sIns.cohort[k0].avg : null;
+    if(!sw.devAboveMiddle && mine!=null && coh!=null && mine<coh)
+      L.push('Biggest opportunity: '+C[k0].label+' — '+f1(coh-mine)+' points below the cohort average'+(!isFinalist && X.gap && X.gap[k0].fin!=null && X.gap[k0].fin>mine ? ' and '+f1(X.gap[k0].fin-mine)+' below the finalists\' average' : '')+'.');
+    var g=gapOrder(X.gap, C);
+    if(!isFinalist && g.length>1) L.push('For context: what set the finalists apart most was '+C[g[0].k].label+' and '+C[g[1].k].label+'.');
     if(fc){
       L.push('');
       L.push('Final scores by criterion (change vs your Semifinal):');
-      C.forEach(function(c,k){ var a=fc.crit[k].avg, b=sc.crit[k].avg; L.push('• '+c.label+': '+f1(a)+'/'+c.max+(a!=null && b!=null?' ('+sgn(a-b)+')':'')); });
+      var ch=C.map(function(c,k){ var a=fc.crit[k].avg, b=sc.crit[k].avg; return a!=null && b!=null ? a-b : null; });
+      C.forEach(function(c,k){ L.push('• '+c.label+': '+f1(fc.crit[k].avg)+'/'+c.max+(ch[k]!=null?' ('+sgn(ch[k])+')':'')); });
+      var o=ch.map(function(x,k){ return { k:k, x:x }; }).filter(function(x){ return x.x!=null; }).sort(function(a,b){ return b.x-a.x; });
+      if(o.length){ var up=o[0], dn=o[o.length-1];
+        L.push(up.x>0.4 ? 'In the Final you improved most on '+C[up.k].label+' ('+sgn(up.x)+')'+(dn.x<-0.4?' and dropped most on '+C[dn.k].label+' ('+sgn(dn.x)+').':'.')
+          : dn.x<-0.4 ? 'In the Final your scores dipped most on '+C[dn.k].label+' ('+sgn(dn.x)+').' : 'Your Final scores were close to your Semifinal ones across the criteria.'); }
     }
-    return L.join('\n');
+    return { sc:sc, fc:fc, isFinalist:isFinalist, finPlace:finPlace, sw:sw, text:L.join('\n') };
   }
 
-  function feedbackSection(sIns, fIns, semi, fin){
-    var C=semi.criteria, list=byRank(sIns.cands);
-    var sc=list.filter(function(c){ return c.seq===state.ins.pick; })[0];
-    if(!sc) return '';
-    var fc=fIns ? fIns.cands.filter(function(c){ return c.semiSeq===sc.seq; })[0] : null;
-    var finalists=(semi.finalists||[]).map(function(f){ return f.semiSeq; }), isFinalist=finalists.indexOf(sc.seq)>=0;
-    var cut=finalCut(sIns, finalists), sw=strengthsOf(sc), txt=feedbackText(sc, fc, sIns, fIns, C, isFinalist, cut);
+  function feedbackSection(X){
+    var C=X.C, sIns=X.sIns, list=byRank(sIns.cands), F=feedbackFor(state.ins.pick, X);
+    if(!F) return '';
+    var sc=F.sc, fc=F.fc, sw=F.sw;
     var tile=function(k,b,s){ return '<div class="tile"><div class="k">'+k+'</div><div class="b">'+b+'</div><div class="s">'+s+'</div></div>'; };
-    var spread=sc.rankMax!=null ? sc.rankMax-sc.rankMin : null;
-    var tiles=(fc ? tile('Final', fc.rank===1 && placeOf(fc,fIns.cands).indexOf('joint')<0 ? '🏆 Winner' : placeOf(fc,fIns.cands)+' place', 'official '+fc.official) : '')
+    var ag=agreementOf(sc, sIns.n);
+    var tiles=(fc ? tile('Final', F.finPlace==='Winner' ? '🏆 Winner' : F.finPlace, 'official '+fc.official) : '')
       +tile('Semifinal', placeOf(sc,sIns.cands)+' <small style="font-size:12px">of '+sIns.n+'</small>', 'official '+(sc.official!=null?sc.official:'–')
-          +(isFinalist?' · made the Final':cut!=null && sc.official!=null?' · '+f2(cut-sc.official)+' below the cut':''))
+          +(F.isFinalist?' · made the Final':X.cut!=null && sc.official!=null?' · '+f2(X.cut-sc.official)+' below the cut':''))
       +tile('Relative', sc.standing!=null?Math.round(sc.standing)+' <small style="font-size:12px">/ 100</small>':'–', 'ahead of '+(sc.standing!=null?Math.round(sc.standing):'–')+'% on average · #'+(sc.standingRank||'–')+' of '+sIns.n)
       +tile('Above judge average', sc.above+' / '+sc.n, 'judges scored them above their own average')
-      +tile('Judges placed them', sc.rankMin!=null?ordinal(Math.round(sc.rankMin))+'–'+ordinal(Math.round(sc.rankMax)):'–',
-          spread==null?'':spread<=sIns.n/4?'judges largely agreed':spread>=sIns.n/2?'judges were split':'some spread between judges');
-    var head='<tr><th>Criterion</th><th>Semifinal avg</th><th>Cohort avg</th><th>Rank</th><th>Relative</th>'+(fc?'<th>Final avg</th><th>Change</th>':'')+'</tr>';
-    var body=C.map(function(c,k){ var x=sc.crit[k], s=x.standing!=null?Math.round(x.standing):null;
-      return '<tr><td>'+esc(c.label)+'</td><td><b>'+f1(x.avg)+'</b> / '+c.max+'</td><td>'+f1(sIns.cohort[k].avg)+'</td><td>'+(x.rank?ordinal(x.rank):'–')+'</td>'
+      +tile('Judges placed them', sc.rankMin!=null?ordinal(sc.rankMin)+'–'+ordinal(sc.rankMax):'–', ag ? ag.tile : '');
+    var vsF=!F.isFinalist && X.gap;
+    var head='<tr><th>Criterion</th><th>Semifinal avg</th><th>Cohort avg</th>'+(vsF?'<th>vs finalists</th>':'')+'<th>Rank</th><th>Relative</th>'+(fc?'<th>Final avg</th><th>Change</th>':'')+'</tr>';
+    var body=C.map(function(c,k){ var x=sc.crit[k], s=x.standing!=null?Math.round(x.standing):null, gf=vsF && X.gap[k].fin!=null && x.avg!=null ? x.avg-X.gap[k].fin : null;
+      return '<tr><td>'+esc(c.label)+'</td><td><b>'+f1(x.avg)+'</b> / '+c.max+'</td><td>'+f1(sIns.cohort[k].avg)+'</td>'
+        +(vsF?'<td class="'+(gf==null?'':gf>=0?'pos':'neg')+'">'+(gf==null?'–':sgn(gf))+'</td>':'')+'<td>'+(x.rank?ordinal(x.rank):'–')+'</td>'
         +'<td><span class="rel"><i><b style="width:'+(s||0)+'%"></b></i>'+(s==null?'–':s)+'</span></td>'
         +(fc?'<td><b>'+f1(fc.crit[k].avg)+'</b></td><td>'+(fc.crit[k].avg!=null && x.avg!=null?sgn(fc.crit[k].avg-x.avg):'–')+'</td>':'')+'</tr>'; }).join('');
+    var jrows=sc.perJudge.map(function(p,j){ var jx=sIns.judges[j];
+      if(p.total==null) return '<tr><td>'+esc(jx.name)+'</td><td colspan="5" class="co">no usable score (blank sheet or not locked)</td></tr>';
+      var tied=sIns.cands.filter(function(c){ return c.perJudge[j].total===p.total; }).length>1, s=Math.round(p.standing);
+      return '<tr><td>'+esc(jx.name)+'</td><td><b>'+p.total+'</b></td><td>'+jx.min+'–'+jx.max+'</td><td>'+(tied?'joint ':'')+ordinal(p.place)+' of '+jx.n+'</td>'
+        +'<td><span class="rel"><i><b style="width:'+s+'%"></b></i>'+s+'</span></td><td class="'+(p.total>jx.avg?'pos':'neg')+'">'+sgn(p.total-jx.avg)+'</td></tr>'; }).join('');
     var lab=function(x){ return esc(C[x.k].label)+' <span class="co">('+Math.round(sc.crit[x.k].standing)+')</span>'; };
     var opts=list.map(function(c){ return '<option value="'+c.seq+'"'+(c.seq===sc.seq?' selected':'')+'>'+(c.rank?'#'+c.rank+' · ':'')+esc(c.name)+'</option>'; }).join('');
     return '<section class="ins-sec" id="fbSec"><div class="fb">'
@@ -646,8 +894,10 @@
       +'<div class="tablewrap"><table class="fbt">'+head+body+'</table></div>'
       +'<div class="sw"><div><b>'+(sw.strOnlyRelative?'Relative strength':'Strengths')+'</b>'+sw.str.map(lab).join(', ')+'</div>'
       +'<div class="dev"><b>'+(sw.devAboveMiddle?'Room to grow':'To develop')+'</b>'+sw.dev.map(lab).join(', ')+(sw.devAboveMiddle?' — still above the middle of the cohort':'')+'</div></div>'
-      +(sc.blank?'<div class="lu-warn" style="margin:0 0 12px">One judge\'s sheet for this candidate is blank (all 0). It is left out here; the official average counted it as the lowest score. Check before sharing.</div>':'')
-      +'<details><summary>Preview the feedback text</summary><pre id="fbText">'+esc(txt)+'</pre></details>'
+      +'<p class="mini-h" style="margin-top:4px">Judge by judge (Semifinal) — for you only</p>'
+      +'<div class="tablewrap"><table class="fbt"><tr><th>Judge</th><th>Score</th><th>Their range</th><th>Where they placed them</th><th>Relative</th><th>vs their average</th></tr>'+jrows+'</table></div>'
+      +(sc.blank?'<div class="lu-warn" style="margin:12px 0 0">One judge\'s sheet for this candidate is blank (all 0). It is left out here; the official average counted it as the lowest score. Check before sharing.</div>':'')
+      +'<details style="margin-top:12px"><summary>Preview the feedback text</summary><pre id="fbText">'+esc(F.text)+'</pre></details>'
       +'<p class="co" style="margin-top:8px">The text covers this candidate only and names no judges. Relative numbers in brackets: 100 = top of the cohort on that criterion.</p>'
       +'</div></section>';
   }
@@ -666,15 +916,27 @@
     var sig=JSON.stringify([semi.rows, hasFinal && fin.rows, semi.finalists, state.ins, rd]);
     if(sig===state.insSig && box.innerHTML) return;
     state.insSig=sig;
+    var fseqs=(semi.finalists||[]).map(function(f){ return f.semiSeq; });
+    var X={ sIns:sIns, fIns:fIns, C:semi.criteria, fseqs:fseqs, cut:finalCut(sIns, fseqs), gap:INS.finalistGap(sIns, fseqs) };
+    var st=hasFinal ? INS.story(sIns, fIns) : null;
     var ins=rd==='final' ? fIns : sIns, d=rd==='final' ? fin : semi;
-    var cut=finalCut(sIns, (semi.finalists||[]).map(function(f){ return f.semiSeq; }));
+    var parts=[['sec-close','How close it was']].concat(rd==='final' && st ? [['sec-story','Semifinal → Final']] : [])
+      .concat([['sec-judges','Judges']]).concat(rd==='semi' ? [['sec-dis','Disagreements']] : []).concat([['sec-cohort','Criteria'],['sec-cands',rd==='final'?'Finalists':'Candidates'],['fbSec','Feedback']]);
     box.innerHTML='<div class="ins-top"><div class="itabs">'
         +'<button type="button" class="itab'+(rd==='semi'?' on':'')+'" data-ir="semi">Semifinal · '+sIns.n+'</button>'
         +(hasFinal?'<button type="button" class="itab'+(rd==='final'?' on':'')+'" data-ir="final">Final · '+fIns.n+'</button>':'')
-        +'</div><button type="button" class="btn ghost" id="insCsv">Download CSV</button></div>'
-      +judgeSection(ins, d)+cohortSection(ins, d, rd, cut)+candSection(ins, d, rd)+feedbackSection(sIns, fIns, semi, fin);
+        +'</div><div class="ins-dl"><button type="button" class="btn ghost" id="insCsv">Table (CSV)</button><button type="button" class="btn ghost" id="fbCsv">All feedback (CSV)</button></div></div>'
+      +takeaways(ins, d, rd, { gap:X.gap, story:st })
+      +'<nav class="toc">'+parts.map(function(p){ return '<a href="#'+p[0]+'" data-go="'+p[0]+'">'+p[1]+'</a>'; }).join('')+'</nav>'
+      +closeSection(ins, d, rd, fseqs, X.cut)
+      +(rd==='final' && st ? storySection(st, d) : '')
+      +judgeSection(ins, d)
+      +(rd==='semi' ? disagreeSection(ins) : '')
+      +cohortSection(ins, d, rd, X.cut, X.gap)+candSection(ins, d, rd)+feedbackSection(X);
     [].forEach.call(box.querySelectorAll('.itab'), function(b){ b.addEventListener('click', function(){ state.ins.round=b.dataset.ir; renderInsights(); }); });
-    $('#insCsv').addEventListener('click', function(){ downloadCsv(ins, d, rd, cut); });
+    [].forEach.call(box.querySelectorAll('.toc a'), function(a){ a.addEventListener('click', function(e){ e.preventDefault(); var t=document.getElementById(a.dataset.go); if(t) t.scrollIntoView({behavior:'smooth', block:'start'}); }); });
+    $('#insCsv').addEventListener('click', function(){ downloadCsv(ins, d, rd, X.cut); });
+    $('#fbCsv').addEventListener('click', function(){ downloadFeedback(X); });
     [].forEach.call(box.querySelectorAll('table.ins tr.prow'), function(tr){
       tr.addEventListener('click', function(){ state.ins.pick=+tr.dataset.pick; renderInsights(); var f=$('#fbSec'); if(f) f.scrollIntoView({behavior:'smooth', block:'start'}); });
     });
@@ -689,6 +951,13 @@
     if(navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(t).then(done, fallback); else fallback();
   }
 
+  function saveCsv(rows, name){
+    var csv=rows.map(function(r){ return r.map(function(v){ v=v==null?'':String(v); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; }).join(','); }).join('\n');
+    var a=document.createElement('a'); a.href=URL.createObjectURL(new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'}));
+    a.download=name; document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }
+
   function downloadCsv(ins, d, rd, cut){
     var C=d.criteria, r2=function(v){ return v==null ? '' : Math.round(v*100)/100; };
     var head=['Rank','Name','Company','Official','Average of all judges','Relative (0-100)','Relative order','Judges above their own average','Judges counted']
@@ -696,10 +965,14 @@
     var rows=byRank(ins.cands).map(function(c){
       return [c.rank, c.name, c.company, c.official, r2(c.raw), c.standing==null?'':Math.round(c.standing), c.standingRank, c.above, c.n]
         .concat(c.crit.map(function(x){ return r2(x.avg); })).concat(rd==='semi'?[cut!=null && c.official!=null && c.official<cut ? r2(cut-c.official) : '']:[]); });
-    var csv=[head].concat(rows).map(function(r){ return r.map(function(v){ v=v==null?'':String(v); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; }).join(','); }).join('\n');
-    var a=document.createElement('a'); a.href=URL.createObjectURL(new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'}));
-    a.download='cye2026-'+(rd==='final'?'final':'semifinal')+'-insights.csv'; document.body.appendChild(a); a.click();
-    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+    saveCsv([head].concat(rows), 'cye2026-'+(rd==='final'?'final':'semifinal')+'-insights.csv');
+  }
+
+  // one row per candidate with their ready-to-send text — handy for a mail merge
+  function downloadFeedback(X){
+    var rows=byRank(X.sIns.cands).map(function(c){ var F=feedbackFor(c.seq, X);
+      return [c.name, c.company, placeOf(c, X.sIns.cands), c.official, F.finPlace||'', F.text]; });
+    saveCsv([['Name','Company','Semifinal place','Semifinal official score','Final result','Feedback text']].concat(rows), 'cye2026-feedback.csv');
   }
 
   function detailRow(r,d){
