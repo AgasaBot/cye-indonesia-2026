@@ -89,6 +89,58 @@
   .win{display:inline-block;margin-left:6px;font-size:10px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#7a5200;background:#ffe9a8;border-radius:99px;padding:2px 8px;vertical-align:middle}
   @media(max-width:760px){.lu-list{grid-template-columns:1fr 1fr}}
   @media(max-width:520px){.lu-picks{grid-template-columns:1fr}}
+  /* insights */
+  .ins-top{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+  .itabs{display:inline-flex;gap:4px;background:var(--mist-2);border:1px solid var(--line);border-radius:12px;padding:4px}
+  .itab{border:none;background:transparent;border-radius:9px;padding:7px 14px;font-family:'Montserrat',sans-serif;font-weight:800;font-size:12.5px;color:var(--muted);cursor:pointer}
+  .itab.on{background:var(--teal-deep);color:#fff}
+  .ins-sec{margin:18px 0 26px}
+  .ins-sec h2{font-family:'Montserrat',sans-serif;font-weight:800;font-size:17px;margin-bottom:4px}
+  .ins-sec .lead{font-size:13px;color:var(--muted);margin-bottom:12px;max-width:860px}
+  .jgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:12px}
+  .jcard{border:1px solid var(--line);border-radius:12px;padding:12px 14px;background:#fff}
+  .jcard h3{font-family:'Montserrat',sans-serif;font-weight:800;font-size:14px}
+  .jnums{display:flex;gap:6px 14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin:5px 0 8px}
+  .jnums b{color:var(--navy);font-family:'Montserrat',sans-serif;font-size:14px}
+  .jnums em{font-style:normal;font-weight:700} .jnums em.up{color:var(--teal-deep)} .jnums em.down{color:var(--err)}
+  .strip{position:relative;height:16px;margin:2px 0 10px;background:var(--mist-2);border-radius:99px}
+  .strip .rng{position:absolute;top:4px;height:8px;background:var(--teal-light);border-radius:99px}
+  .strip .pan{position:absolute;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--navy);opacity:.35}
+  .strip .dot{position:absolute;top:1px;width:14px;height:14px;margin-left:-7px;border-radius:50%;background:var(--teal-deep);border:2px solid #fff}
+  .jstyle{font-size:12.5px;line-height:1.45}
+  .lu-warn ul{margin:6px 0 0 18px;font-weight:500}
+  .bars{display:grid;gap:9px;max-width:720px}
+  .bar{display:grid;grid-template-columns:230px 1fr 104px;gap:10px;align-items:center;font-size:13px}
+  .bar .tr{height:10px;background:var(--mist-2);border-radius:99px;overflow:hidden}
+  .bar .fl{display:block;height:100%;background:var(--teal-deep);border-radius:99px}
+  .bar .v{font-variant-numeric:tabular-nums;color:var(--muted);text-align:right}
+  table.ins td.c{font-variant-numeric:tabular-nums}
+  table.ins td.c.s-hi{background:#e3f6ee;font-weight:700} table.ins td.c.s-lo{background:#fdeef1}
+  table.ins tr.sel td{background:#fff8e1}
+  .st{font-family:'Montserrat',sans-serif;font-weight:800}
+  .lnk{border:none;background:none;color:var(--teal-deep);font-weight:700;font-size:12.5px;cursor:pointer;font-family:inherit}
+  .fb{border:1.5px solid var(--teal);border-radius:14px;padding:16px 18px;background:var(--mist-2);scroll-margin-top:12px}
+  .fb-hd{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;align-items:flex-start;margin-bottom:12px}
+  .fb-hd h3{font-family:'Montserrat',sans-serif;font-weight:800;font-size:18px;margin-top:2px}
+  .fb-pick{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  .fb-pick select{font-family:inherit;font-size:13.5px;border:1.5px solid var(--line);border-radius:10px;padding:9px 8px;background:#fff;max-width:280px}
+  .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,118px),1fr));gap:10px;margin-bottom:14px}
+  .tile{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+  .tile .k{font-size:10.5px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--teal-deep)}
+  .tile .b{font-family:'Montserrat',sans-serif;font-weight:800;font-size:19px;line-height:1.25;margin:2px 0}
+  .tile .s{font-size:11.5px;color:var(--muted);line-height:1.35}
+  .fb .tablewrap{background:#fff}
+  table.fbt{min-width:600px}
+  table.fbt td:first-child,table.fbt th:first-child{text-align:left}
+  .rel{display:inline-flex;align-items:center;gap:7px} .rel i{display:inline-block;width:70px;height:7px;background:var(--mist);border-radius:99px;overflow:hidden}
+  .rel i b{display:block;height:100%;background:var(--teal-deep)}
+  .sw{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+  .sw div{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-size:13px}
+  .sw b{display:block;font-family:'Montserrat',sans-serif;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--teal-deep);margin-bottom:3px}
+  .sw .dev b{color:#b45309}
+  .fb pre{white-space:pre-wrap;font-family:inherit;font-size:12.5px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:8px;max-height:360px;overflow:auto}
+  .fb details summary{cursor:pointer;font-size:12.5px;font-weight:700;color:var(--teal-deep)}
+  @media(max-width:620px){.bar{grid-template-columns:1fr 92px}.bar .tr{grid-column:1/-1;grid-row:2}.sw{grid-template-columns:1fr}}
   .secret{-webkit-text-security:disc;text-security:disc}   /* masked, but not a field Chrome keeps offering to save */
   [hidden]{display:none!important}
 </style>
@@ -116,7 +168,9 @@
         <div class="rounds" id="rounds" hidden>
           <button type="button" class="rtab on" data-r="semi">Semifinal</button>
           <button type="button" class="rtab" data-r="final">Final</button>
+          <button type="button" class="rtab" data-r="insights">Insights</button>
         </div>
+        <div id="scoresView">
         <div class="lineup" id="lineup" hidden></div>
         <div class="empty" id="finalEmpty" hidden>The Final hasn't started yet. Pick the Top 4 on the <b>Semifinal</b> tab and press <b>Start the Final</b>.</div>
         <div class="summary" id="summary"></div>
@@ -130,6 +184,8 @@
         </div>
         <div class="tablewrap" id="tblwrap"><table id="tbl"></table></div>
         <div class="legend">Average = each judge's total, drop the <span class="hi">highest</span> &amp; <span class="lo">lowest</span>, average the rest (with all 6 judges, the middle 4). It appears only once every judge has locked that participant. Tap a row for the per-criterion breakdown.</div>
+        </div>
+        <div id="insights" hidden></div>
       </div>
     </div>
   </div>
@@ -142,7 +198,8 @@
   var msg=$('#msg');
   // picks = the Top 4 in the picker (semifinal seqs). Until the admin changes a slot it follows the live
   // ranking on every refresh; once they change one (picksEdited) their choice is kept across refreshes.
-  var state={pass:null, round:'semi', data:{semi:null, final:null}, expanded:{semi:{}, final:{}}, timer:null, picks:null, picksEdited:false, editing:false, busy:false};
+  var state={pass:null, round:'semi', data:{semi:null, final:null}, expanded:{semi:{}, final:{}}, timer:null, picks:null, picksEdited:false, editing:false, busy:false,
+    view:'scores', ins:{round:'semi', pick:null}, insSig:''};
   function show(t){ msg.className='msg bad'; msg.textContent=t; } function clr(){ msg.className='msg'; msg.textContent=''; }
   function post(b){ return fetch(ENDPOINT,{method:'POST',body:JSON.stringify(b)}).then(function(r){return r.json();}); }
   function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
@@ -162,22 +219,29 @@
   function load(pass, round){
     round=round||state.round;
     return post({action:'adminScores', passcode:pass, round:round}).then(function(d){
-      if(d && d.ok){ clr(); state.data[round]=d; if(round===state.round) render(); return true; }
+      if(d && d.ok){ clr(); state.data[round]=d; if(round===state.round || state.view==='insights') render(); return true; }
       show((d&&d.error)||'Could not load.'); return false;
     }).catch(function(){ show('Could not reach the server.'); return false; });
   }
 
-  $('#refreshBtn').addEventListener('click', function(){ if(state.pass) load(state.pass); });
+  $('#refreshBtn').addEventListener('click', reload);
   $('#sortAvg').addEventListener('change', render);
   $('#autoref').addEventListener('change', startAuto);
-  function startAuto(){ if(state.timer) clearInterval(state.timer); if($('#autoref').checked){ state.timer=setInterval(function(){ if(state.pass && !state.busy) load(state.pass); },15000); } }
+  function startAuto(){ if(state.timer) clearInterval(state.timer); if($('#autoref').checked){ state.timer=setInterval(function(){ if(state.pass && !state.busy) reload(); },15000); } }
+  // the scores tabs need their own round; Insights uses both (the Final only once it exists)
+  function reload(){
+    if(!state.pass) return;
+    if(state.view!=='insights') return load(state.pass);
+    load(state.pass,'semi').then(function(){ var s=state.data.semi; if(s && s.finalReady) load(state.pass,'final'); });
+  }
   [].forEach.call(document.querySelectorAll('.rtab'), function(b){
     b.addEventListener('click', function(){ switchRound(b.dataset.r); });
   });
   function switchRound(r){
-    state.round=r;
+    state.view = r==='insights' ? 'insights' : 'scores';
+    if(r!=='insights') state.round=r;
     [].forEach.call(document.querySelectorAll('.rtab'), function(b){ b.classList.toggle('on', b.dataset.r===r); });
-    render(); if(state.pass) load(state.pass, r);
+    render(); reload();
   }
 
   // standard competition ranking: equal averages share a rank (1, 2, 2, 4 …) and are flagged as a tie
@@ -193,6 +257,12 @@
     var d=state.data[state.round], isFinal=state.round==='final';
     var semi=state.data.semi, api2=!!(semi && semi.api>=2);
     $('#rounds').hidden=!api2;
+    var insView = state.view==='insights' && api2;
+    $('#scoresView').hidden=insView; $('#insights').hidden=!insView;
+    if(insView){
+      $('#meta').innerHTML='Updated '+new Date().toLocaleTimeString()+(semi.scoringOpen===false?' · <b>Scoring closed</b>':'');
+      renderInsights(); return;
+    }
     renderLineup();
     var finalWaiting = isFinal && (!d || !d.finalReady);
     $('#finalEmpty').hidden=!finalWaiting;
@@ -328,6 +398,308 @@
       state.picks=null; state.picksEdited=false; state.data.final=null; return load(state.pass,'semi');
     }).catch(function(){ alert('Could not reach the server.'); })
     .finally(function(){ state.busy=false; });
+  }
+
+  /* ---------- Insights: how each judge scored, where the cohort stood, feedback per candidate ---------- */
+  /* insights-calc:start — pure functions (no page access); the offline checks run this block */
+  var INS = (function(){
+    function nn(v){ return v!=null; }
+    function mean(a){ if(!a.length) return null; var s=0; for(var i=0;i<a.length;i++) s+=a[i]; return s/a.length; }
+    function sd(a){ if(a.length<2) return 0; var m=mean(a), s=0; for(var i=0;i<a.length;i++) s+=(a[i]-m)*(a[i]-m); return Math.sqrt(s/(a.length-1)); }
+    function median(a){ if(!a.length) return null; var s=a.slice().sort(function(x,y){ return x-y; }), h=s.length>>1; return s.length%2 ? s[h] : (s[h-1]+s[h])/2; }
+    // 1 = highest; equal values share the average of their places; nulls stay null
+    function ranks(vals){
+      var idx=[]; vals.forEach(function(v,i){ if(v!=null) idx.push(i); });
+      idx.sort(function(a,b){ return vals[b]-vals[a]; });
+      var r=vals.map(function(){ return null; });
+      for(var i=0;i<idx.length;){ var j=i; while(j+1<idx.length && vals[idx[j+1]]===vals[idx[i]]) j++;
+        for(var k=i;k<=j;k++) r[idx[k]]=(i+j)/2+1; i=j+1; }
+      return r;
+    }
+    // where a score sits among this judge's own scores: 100 = their best, 0 = their lowest (ties share)
+    function standing(vals){
+      var r=ranks(vals), n=vals.filter(nn).length;
+      return vals.map(function(v,i){ return v==null ? null : n<2 ? 50 : (n-r[i])/(n-1)*100; });
+    }
+    function pearson(a,b){ var ma=mean(a), mb=mean(b), s=0, da=0, db=0;
+      for(var i=0;i<a.length;i++){ s+=(a[i]-ma)*(b[i]-mb); da+=(a[i]-ma)*(a[i]-ma); db+=(b[i]-mb)*(b[i]-mb); }
+      return da && db ? s/Math.sqrt(da*db) : null; }
+    // 1, 2, 2, 4 … like the dashboard's ranking; nulls unranked
+    function compRank(vals){ return vals.map(function(v){ if(v==null) return null; var b=0; vals.forEach(function(x){ if(x!=null && x>v) b++; }); return b+1; }); }
+
+    function compute(d){
+      var J=d.judges, C=d.criteria, rows=d.rows;
+      // only locked scores count; an all-zero sheet means "not really scored" — flagged and left out
+      function use(r,j){ var x=r.perJudge[j]; return x && x.locked && x.scores && x.total>0 ? x : null; }
+      var blanks=[], zeros=[], allScored=true;
+      rows.forEach(function(r){ r.perJudge.forEach(function(x){
+        if(!x.locked || !x.scores){ allScored=false; return; }
+        if(x.total===0) blanks.push({ judge:x.judge, name:r.name });
+        else x.scores.forEach(function(v,k){ if(v===0) zeros.push({ judge:x.judge, name:r.name, label:C[k].label }); });
+      }); });
+      var T=J.map(function(_,j){ return rows.map(function(r){ var x=use(r,j); return x ? x.total : null; }); });
+      var S=J.map(function(_,j){ return C.map(function(_,k){ return rows.map(function(r){ var x=use(r,j); return x ? x.scores[k] : null; }); }); });
+      var allT=[]; T.forEach(function(t){ t.forEach(function(v){ if(v!=null) allT.push(v); }); });
+      var panel=mean(allT), TR=T.map(ranks), ST=T.map(standing), SK=S.map(function(a){ return a.map(standing); });
+      // who gave each participant's highest / lowest total (the official average drops both), where 3+ totals exist
+      var hi=J.map(function(){ return 0; }), lo=hi.slice(), nTrim=0;
+      rows.forEach(function(r,i){
+        var t=T.map(function(x){ return x[i]; }), u=t.filter(nn); if(u.length<3) return; nTrim++;
+        var mx=Math.max.apply(null,u), mn=Math.min.apply(null,u);
+        t.forEach(function(v,j){ if(v===mx) hi[j]++; if(v===mn) lo[j]++; });
+      });
+      var cohort=C.map(function(c,k){ var v=[]; S.forEach(function(a){ a[k].forEach(function(x){ if(x!=null) v.push(x); }); });
+        return { label:c.label, max:c.max, avg:mean(v), pct:v.length ? mean(v)/c.max*100 : null }; });
+      var judges=J.map(function(name,j){
+        var t=T[j].filter(nn), a=[], b=[];
+        rows.forEach(function(r,i){ if(T[j][i]==null) return;
+          var o=[]; T.forEach(function(x,k){ if(k!==j && x[i]!=null) o.push(x[i]); });
+          if(o.length){ a.push(T[j][i]); b.push(mean(o)); } });
+        return { name:name, n:t.length, avg:mean(t), diff:t.length ? mean(t)-panel : null, sd:sd(t),
+          min:t.length ? Math.min.apply(null,t) : null, max:t.length ? Math.max.apply(null,t) : null, hi:hi[j], lo:lo[j],
+          agree:a.length>=5 ? pearson(ranks(a), ranks(b)) : null,          // Spearman vs the other judges' average
+          critPct:C.map(function(c,k){ var v=S[j][k].filter(nn); return v.length ? mean(v)/c.max*100 : null; }) };
+      });
+      var cands=rows.map(function(r,i){
+        var used=[]; J.forEach(function(_,j){ var x=use(r,j); if(x) used.push(x); });
+        var st=ST.map(function(x){ return x[i]; }).filter(nn), jr=TR.map(function(x){ return x[i]; }).filter(nn);
+        return { seq:r.seq, name:r.name, company:r.company, semiSeq:r.semiSeq||null, official:r.average, n:used.length,
+          blank:r.perJudge.some(function(x){ return x.locked && x.scores && x.total===0; }),
+          raw:used.length ? mean(used.map(function(x){ return x.total; })) : null,
+          standing:st.length ? mean(st) : null,
+          above:judges.filter(function(jx,j){ return T[j][i]!=null && T[j][i]>jx.avg; }).length,
+          rankMin:jr.length ? Math.min.apply(null,jr) : null, rankMax:jr.length ? Math.max.apply(null,jr) : null,
+          crit:C.map(function(c,k){ var v=used.map(function(x){ return x.scores[k]; }), s=SK.map(function(a){ return a[k][i]; }).filter(nn);
+            return { avg:v.length ? mean(v) : null, standing:s.length ? mean(s) : null }; }) };
+      });
+      var offR=compRank(cands.map(function(c){ return c.official; })), stR=compRank(cands.map(function(c){ return c.standing; }));
+      var critR=C.map(function(_,k){ return compRank(cands.map(function(c){ return c.crit[k].avg; })); });
+      cands.forEach(function(c,i){ c.rank=offR[i]; c.standingRank=stR[i]; c.crit.forEach(function(x,k){ x.rank=critR[k][i]; }); });
+      return { n:rows.length, judges:judges, panel:panel, medSd:median(judges.filter(function(x){ return x.n>=2; }).map(function(x){ return x.sd; })),
+        nTrim:nTrim, allScored:allScored, cohort:cohort, cands:cands, blanks:blanks, zeros:zeros };
+    }
+    return { compute:compute };
+  })();
+  /* insights-calc:end */
+
+  var CRIT_SHORT={ impact:'Community', business:'Business', innovation:'Innovation', leadership:'Leadership', presentation:'Presentation' };
+  function cshort(c){ return CRIT_SHORT[c.key] || abbr(c.label); }
+  function f1(v){ return v==null ? '–' : (Math.round(v*10)/10).toFixed(1); }
+  function f2(v){ return v==null ? '–' : String(Math.round(v*100)/100); }
+  function sgn(v){ var x=Math.round(v*10)/10; return x===0 ? '±0' : (x>0?'+':'−')+Math.abs(x).toFixed(1); }
+  function ordinal(n){ var s=['th','st','nd','rd'], v=n%100; return n+(s[(v-20)%10]||s[v]||s[0]); }
+  function byRank(list){ return list.slice().sort(function(a,b){ return (a.rank||999)-(b.rank||999) || a.seq-b.seq; }); }
+  function placeOf(c, cands){   // "2nd", "joint 2nd"
+    var tied=cands.filter(function(x){ return x.official!=null && x.official===c.official; }).length>1;
+    return c.rank ? (tied?'joint ':'')+ordinal(c.rank) : '–';
+  }
+  function agreeLabel(r){ return r>=0.6 ? 'high' : r>=0.35 ? 'moderate' : 'low'; }
+
+  function judgeStyle(j, ins, crit){
+    if(!j.n) return 'No locked scores yet.';
+    var bits=[];
+    bits.push(j.diff>=5 ? 'Generous: '+sgn(j.diff)+' vs the panel average'
+      : j.diff<=-5 ? 'Strict: '+sgn(j.diff)+' vs the panel average' : 'Close to the panel average ('+sgn(j.diff)+')');
+    if(ins.medSd && j.n>=5){
+      if(j.sd<=0.6*ins.medSd) bits.push('uses a narrow range ('+j.min+'–'+j.max+'), so separates candidates less');
+      else if(j.sd>=1.4*ins.medSd) bits.push('uses a wide range ('+j.min+'–'+j.max+')');
+    }
+    if(ins.nTrim>=4){
+      if(j.lo>=ins.nTrim*0.5) bits.push('gave the lowest total for '+j.lo+' of '+ins.nTrim+', so their score was usually dropped from the official average');
+      else if(j.hi>=ins.nTrim*0.4) bits.push('gave the highest total for '+j.hi+' of '+ins.nTrim+', so their score was often dropped from the official average');
+    }
+    if(j.agree!=null){
+      if(j.agree>=0.6) bits.push('put candidates in much the same order as the other judges');
+      else if(j.agree<0.35) bits.push('often put candidates in a different order from the other judges');
+    }
+    var k=-1, gap=0; j.critPct.forEach(function(p,i){ var g=p-ins.cohort[i].pct; if(p!=null && Math.abs(g)>Math.abs(gap)){ gap=g; k=i; } });
+    if(k>=0 && Math.abs(gap)>=8) bits.push('much '+(gap>0?'more generous':'stricter')+' than the panel on '+cshort(crit[k])+' ('+Math.round(j.critPct[k])+'% vs '+Math.round(ins.cohort[k].pct)+'% of the points)');
+    return bits.join('; ')+'.';
+  }
+
+  function judgeSection(ins, d){
+    var cl=function(v){ return Math.max(0,Math.min(100,v)); };
+    var cards=ins.judges.map(function(j){
+      var strip=j.n ? '<div class="strip" title="Totals this judge gave, on the 0–100 scale. Dot = their average, line = panel average.">'
+        +'<span class="rng" style="left:'+cl(j.min)+'%;width:'+Math.max(1,cl(j.max)-cl(j.min))+'%"></span>'
+        +'<span class="pan" style="left:'+cl(ins.panel)+'%"></span><span class="dot" style="left:'+cl(j.avg)+'%"></span></div>' : '';
+      return '<div class="jcard"><h3>'+esc(j.name)+'</h3>'
+        +'<div class="jnums"><span>Average <b>'+f1(j.avg)+'</b> <em class="'+(j.diff>=5?'up':j.diff<=-5?'down':'')+'">'+(j.n?sgn(j.diff):'')+'</em></span>'
+        +'<span>Range <b>'+(j.n?j.min+'–'+j.max:'–')+'</b></span>'
+        +'<span>Highest / lowest <b>'+j.hi+' / '+j.lo+'</b></span>'
+        +'<span>Agreement <b>'+(j.agree==null?'–':agreeLabel(j.agree))+'</b></span></div>'
+        +strip+'<p class="jstyle">'+esc(judgeStyle(j, ins, d.criteria))+'</p></div>';
+    }).join('');
+    var checks=ins.blanks.map(function(b){ return '<li><b>'+esc(b.judge)+'</b> → '+esc(b.name)+': blank sheet (all 0). The official average treated it as the lowest score (so it was dropped and the next-lowest score stayed in). It is left out of these insights — check whether this pitch was actually scored.</li>'; })
+      .concat(ins.zeros.map(function(z){ return '<li><b>'+esc(z.judge)+'</b> → '+esc(z.name)+': 0 for '+esc(z.label)+' — check it was intended.</li>'; }));
+    return '<section class="ins-sec"><h2>How each judge scored</h2>'
+      +'<p class="lead">The panel average was <b>'+f1(ins.panel)+'</b> per pitch. '
+      +(ins.allScored?'Every judge scored every candidate, so a strict or generous judge moved everyone by the same amount. What judge style does change: a judge with a narrow range separates candidates less, and the official average drops each candidate\'s highest and lowest total — so a judge who is always the strictest or most generous rarely counts. ':'')
+      +'“Highest / lowest” = how often this judge gave a candidate\'s top or bottom total. “Agreement” = how closely their order of candidates matched the other judges\'.</p>'
+      +'<div class="jgrid">'+cards+'</div>'
+      +(checks.length?'<div class="lu-warn"><b>Check before sharing feedback</b><ul>'+checks.join('')+'</ul></div>':'')
+      +'</section>';
+  }
+
+  function cohortSection(ins, d, rd, cut){
+    var o=ins.cohort.map(function(c,k){ return { k:k, p:c.pct }; }).filter(function(x){ return x.p!=null; }).sort(function(a,b){ return b.p-a.p; });
+    var bars=ins.cohort.map(function(c){ return '<div class="bar"><span>'+esc(c.label)+'</span><span class="tr"><span class="fl" style="width:'+Math.round(c.pct||0)+'%"></span></span>'
+      +'<span class="v">'+f1(c.avg)+' / '+c.max+' · '+Math.round(c.pct||0)+'%</span></div>'; }).join('');
+    var lead='';
+    if(o.length>1){
+      var top=d.criteria[o[0].k], low=d.criteria[o[o.length-1].k], maxW=Math.max.apply(null,d.criteria.map(function(c){ return c.max; }));
+      lead='Strongest area: <b>'+esc(top.label)+'</b> ('+Math.round(o[0].p)+'% of the points available). Weakest: <b>'+esc(low.label)+'</b> ('+Math.round(o[o.length-1].p)+'%)'
+        +(low.max===maxW?' — also the criterion worth the most points ('+low.max+'), so it is the biggest lever for most candidates. ':'. ');
+    }
+    var offs=ins.cands.map(function(c){ return c.official; }).filter(function(v){ return v!=null; }).sort(function(a,b){ return a-b; });
+    if(offs.length) lead+='Official averages ran from '+offs[0]+' to '+offs[offs.length-1]+(offs.length>2?' (middle '+f2(offs.length%2?offs[offs.length>>1]:(offs[offs.length/2-1]+offs[offs.length/2])/2)+')':'')+'.'
+      +(rd==='semi' && cut!=null?' The Final cut was '+cut+'.':'');
+    return '<section class="ins-sec"><h2>Where the '+(rd==='final'?'finalists':'cohort')+' stood</h2><p class="lead">'+lead+'</p><div class="bars">'+bars+'</div></section>';
+  }
+
+  function candSection(ins, d, rd){
+    var C=d.criteria;
+    var head='<tr><th>Rank</th><th class="name">'+(rd==='final'?'Finalist':'Candidate')+'</th><th>Official</th>'
+      +'<th title="Where each judge placed them among everyone that judge scored (100 = best), averaged">Relative</th>'
+      +'<th title="How many judges scored them above that judge\'s own average">Above judge avg</th>'
+      +C.map(function(c,k){ return '<th>'+esc(cshort(c))+'<br><small>/'+c.max+' · avg '+f1(ins.cohort[k].avg)+'</small></th>'; }).join('')+'<th></th></tr>';
+    var body=byRank(ins.cands).map(function(c){
+      var key=rd==='final' ? c.semiSeq : c.seq;
+      return '<tr class="prow'+(state.ins.pick===key?' sel':'')+'" data-pick="'+key+'"><td><span class="rank'+(c.rank && c.rank<=(rd==='final'?1:4)?' top':'')+'">'+(c.rank||'–')+'</span></td>'
+        +'<td class="name"><div class="nm">'+esc(c.name)+'</div><div class="co">'+esc(c.company||'')+'</div></td>'
+        +'<td><span class="avg">'+(c.official!=null?c.official:'–')+'</span></td>'
+        +'<td><span class="st">'+(c.standing!=null?Math.round(c.standing):'–')+'</span> <span class="co">#'+(c.standingRank||'–')+'</span></td>'
+        +'<td>'+c.above+' / '+c.n+'</td>'
+        +c.crit.map(function(x){ return '<td class="c'+(x.standing!=null && x.standing>=67?' s-hi':x.standing!=null && x.standing<=33?' s-lo':'')+'" title="'+(x.rank?ordinal(x.rank)+' of '+ins.n:'')+'">'+f1(x.avg)+'</td>'; }).join('')
+        +'<td><button type="button" class="lnk">Feedback ›</button></td></tr>';
+    }).join('');
+    return '<section class="ins-sec"><h2>All '+(rd==='final'?'finalists':'candidates')+' — more averages</h2>'
+      +'<p class="lead"><b>Official</b> = the announced score (judges\' totals, highest and lowest dropped, averaged). '
+      +'<b>Relative</b> (0–100) = where each judge placed the candidate among everyone that judge scored — 100 is that judge\'s favourite, 0 their lowest — averaged over the judges, so a strict judge counts the same as a generous one (#&nbsp;= its order). It is for understanding performance, not for re-ranking. '
+      +'Criteria = average of all judges; <span style="background:#e3f6ee;padding:0 4px;border-radius:4px">green</span> = among the strongest on that criterion, <span style="background:#fdeef1;padding:0 4px;border-radius:4px">red</span> = among the weakest. Tap a row for feedback.</p>'
+      +'<div class="tablewrap"><table class="ins">'+head+body+'</table></div></section>';
+  }
+
+  // strengths = criteria where the judges placed them high relative to the others (60+); development = below the middle (<50).
+  // With nothing below the middle, their lowest criterion is "room to grow" instead — and never also listed as a strength.
+  function strengthsOf(c){
+    var o=c.crit.map(function(x,k){ return { k:k, s:x.standing }; }).filter(function(x){ return x.s!=null; }).sort(function(a,b){ return b.s-a.s; });
+    var dev=o.slice().reverse().filter(function(x){ return x.s<50; }).slice(0,2), devAboveMiddle=!dev.length;
+    if(devAboveMiddle) dev=o.slice(-1);
+    var str=o.filter(function(x){ return x.s>=60 && dev.indexOf(x)<0; }).slice(0,4), strOnlyRelative=!str.length;
+    if(strOnlyRelative) str=o.slice(0,1);
+    return { str:str, strOnlyRelative:strOnlyRelative, dev:dev, devAboveMiddle:devAboveMiddle };
+  }
+
+  function feedbackText(sc, fc, sIns, fIns, C, isFinalist, cut){
+    var L=[], sw=strengthsOf(sc), lab=function(x){ return C[x.k].label; };
+    L.push('CYE Indonesia 2026 — scoring feedback');
+    L.push(sc.name+(sc.company?' · '+sc.company:''));
+    L.push('');
+    if(fc) L.push('Final: '+(fc.rank===1 && placeOf(fc,fIns.cands).indexOf('joint')<0 ? 'Winner' : placeOf(fc,fIns.cands)+' place')+' — official score '+fc.official+'/100.');
+    L.push('Semifinal: '+placeOf(sc,sIns.cands)+' of '+sIns.n+' — official score '+(sc.official!=null?sc.official:'–')+'/100'+(isFinalist?', qualifying for the Final.':'.'));
+    if(!isFinalist && cut!=null && sc.official!=null) L.push('The Final cut was '+cut+', '+f2(cut-sc.official)+' points above your score.');
+    L.push('(Official score = the judges\' totals averaged after dropping the highest and the lowest.)');
+    L.push('');
+    if(sc.standing!=null) L.push('How the judges saw you: on average, each judge placed you ahead of '+Math.round(sc.standing)+'% of the other semifinalists, and '+sc.above+' of '+sc.n+' judges scored you above their own average.');
+    L.push('');
+    L.push('Semifinal scores by criterion (average of the judges · cohort average):');
+    C.forEach(function(c,k){ L.push('• '+c.label+': '+f1(sc.crit[k].avg)+'/'+c.max+' · cohort '+f1(sIns.cohort[k].avg)); });
+    L.push('');
+    L.push((sw.strOnlyRelative?'Relative strength: ':'Strengths: ')+sw.str.map(lab).join(', ')+'.');
+    L.push((sw.devAboveMiddle?'Room to grow: ':'To develop: ')+sw.dev.map(lab).join(', ')+(sw.devAboveMiddle?' (your lowest area, though still above the middle of the cohort).':'.'));
+    if(fc){
+      L.push('');
+      L.push('Final scores by criterion (change vs your Semifinal):');
+      C.forEach(function(c,k){ var a=fc.crit[k].avg, b=sc.crit[k].avg; L.push('• '+c.label+': '+f1(a)+'/'+c.max+(a!=null && b!=null?' ('+sgn(a-b)+')':'')); });
+    }
+    return L.join('\n');
+  }
+
+  function feedbackSection(sIns, fIns, semi, fin){
+    var C=semi.criteria, list=byRank(sIns.cands);
+    var sc=list.filter(function(c){ return c.seq===state.ins.pick; })[0];
+    if(!sc) return '';
+    var fc=fIns ? fIns.cands.filter(function(c){ return c.semiSeq===sc.seq; })[0] : null;
+    var finalists=(semi.finalists||[]).map(function(f){ return f.semiSeq; }), isFinalist=finalists.indexOf(sc.seq)>=0;
+    var cut=finalCut(sIns, finalists), sw=strengthsOf(sc), txt=feedbackText(sc, fc, sIns, fIns, C, isFinalist, cut);
+    var tile=function(k,b,s){ return '<div class="tile"><div class="k">'+k+'</div><div class="b">'+b+'</div><div class="s">'+s+'</div></div>'; };
+    var spread=sc.rankMax!=null ? sc.rankMax-sc.rankMin : null;
+    var tiles=(fc ? tile('Final', fc.rank===1 && placeOf(fc,fIns.cands).indexOf('joint')<0 ? '🏆 Winner' : placeOf(fc,fIns.cands)+' place', 'official '+fc.official) : '')
+      +tile('Semifinal', placeOf(sc,sIns.cands)+' <small style="font-size:12px">of '+sIns.n+'</small>', 'official '+(sc.official!=null?sc.official:'–')
+          +(isFinalist?' · made the Final':cut!=null && sc.official!=null?' · '+f2(cut-sc.official)+' below the cut':''))
+      +tile('Relative', sc.standing!=null?Math.round(sc.standing)+' <small style="font-size:12px">/ 100</small>':'–', 'ahead of '+(sc.standing!=null?Math.round(sc.standing):'–')+'% on average · #'+(sc.standingRank||'–')+' of '+sIns.n)
+      +tile('Above judge average', sc.above+' / '+sc.n, 'judges scored them above their own average')
+      +tile('Judges placed them', sc.rankMin!=null?ordinal(Math.round(sc.rankMin))+'–'+ordinal(Math.round(sc.rankMax)):'–',
+          spread==null?'':spread<=sIns.n/4?'judges largely agreed':spread>=sIns.n/2?'judges were split':'some spread between judges');
+    var head='<tr><th>Criterion</th><th>Semifinal avg</th><th>Cohort avg</th><th>Rank</th><th>Relative</th>'+(fc?'<th>Final avg</th><th>Change</th>':'')+'</tr>';
+    var body=C.map(function(c,k){ var x=sc.crit[k], s=x.standing!=null?Math.round(x.standing):null;
+      return '<tr><td>'+esc(c.label)+'</td><td><b>'+f1(x.avg)+'</b> / '+c.max+'</td><td>'+f1(sIns.cohort[k].avg)+'</td><td>'+(x.rank?ordinal(x.rank):'–')+'</td>'
+        +'<td><span class="rel"><i><b style="width:'+(s||0)+'%"></b></i>'+(s==null?'–':s)+'</span></td>'
+        +(fc?'<td><b>'+f1(fc.crit[k].avg)+'</b></td><td>'+(fc.crit[k].avg!=null && x.avg!=null?sgn(fc.crit[k].avg-x.avg):'–')+'</td>':'')+'</tr>'; }).join('');
+    var lab=function(x){ return esc(C[x.k].label)+' <span class="co">('+Math.round(sc.crit[x.k].standing)+')</span>'; };
+    var opts=list.map(function(c){ return '<option value="'+c.seq+'"'+(c.seq===sc.seq?' selected':'')+'>'+(c.rank?'#'+c.rank+' · ':'')+esc(c.name)+'</option>'; }).join('');
+    return '<section class="ins-sec" id="fbSec"><div class="fb">'
+      +'<div class="fb-hd"><div><div class="lu-k">Feedback for</div><h3>'+esc(sc.name)+'</h3><div class="co">'+esc(sc.company||'')+' · Semifinal #'+sc.seq+'</div></div>'
+      +'<div class="fb-pick"><select id="fbPick" aria-label="Candidate">'+opts+'</select><button type="button" class="btn" id="fbCopy">Copy feedback text</button></div></div>'
+      +'<div class="tiles">'+tiles+'</div>'
+      +'<div class="tablewrap"><table class="fbt">'+head+body+'</table></div>'
+      +'<div class="sw"><div><b>'+(sw.strOnlyRelative?'Relative strength':'Strengths')+'</b>'+sw.str.map(lab).join(', ')+'</div>'
+      +'<div class="dev"><b>'+(sw.devAboveMiddle?'Room to grow':'To develop')+'</b>'+sw.dev.map(lab).join(', ')+(sw.devAboveMiddle?' — still above the middle of the cohort':'')+'</div></div>'
+      +(sc.blank?'<div class="lu-warn" style="margin:0 0 12px">One judge\'s sheet for this candidate is blank (all 0). It is left out here; the official average counted it as the lowest score. Check before sharing.</div>':'')
+      +'<details><summary>Preview the feedback text</summary><pre id="fbText">'+esc(txt)+'</pre></details>'
+      +'<p class="co" style="margin-top:8px">The text covers this candidate only and names no judges. Relative numbers in brackets: 100 = top of the cohort on that criterion.</p>'
+      +'</div></section>';
+  }
+
+  function finalCut(sIns, finalists){
+    var v=sIns.cands.filter(function(c){ return finalists.indexOf(c.seq)>=0 && c.official!=null; }).map(function(c){ return c.official; });
+    return v.length ? Math.min.apply(null,v) : null;
+  }
+
+  function renderInsights(){
+    var box=$('#insights'), semi=state.data.semi, fin=state.data.final;
+    var hasFinal=!!(semi.finalReady && fin && fin.rows && fin.rows.length);
+    var rd=state.ins.round==='final' && hasFinal ? 'final' : 'semi';
+    var sIns=INS.compute(semi), fIns=hasFinal ? INS.compute(fin) : null;
+    if(state.ins.pick==null && sIns.cands.length) state.ins.pick=byRank(sIns.cands)[0].seq;
+    var sig=JSON.stringify([semi.rows, hasFinal && fin.rows, semi.finalists, state.ins, rd]);
+    if(sig===state.insSig && box.innerHTML) return;
+    state.insSig=sig;
+    var ins=rd==='final' ? fIns : sIns, d=rd==='final' ? fin : semi;
+    var cut=finalCut(sIns, (semi.finalists||[]).map(function(f){ return f.semiSeq; }));
+    box.innerHTML='<div class="ins-top"><div class="itabs">'
+        +'<button type="button" class="itab'+(rd==='semi'?' on':'')+'" data-ir="semi">Semifinal · '+sIns.n+'</button>'
+        +(hasFinal?'<button type="button" class="itab'+(rd==='final'?' on':'')+'" data-ir="final">Final · '+fIns.n+'</button>':'')
+        +'</div><button type="button" class="btn ghost" id="insCsv">Download CSV</button></div>'
+      +judgeSection(ins, d)+cohortSection(ins, d, rd, cut)+candSection(ins, d, rd)+feedbackSection(sIns, fIns, semi, fin);
+    [].forEach.call(box.querySelectorAll('.itab'), function(b){ b.addEventListener('click', function(){ state.ins.round=b.dataset.ir; renderInsights(); }); });
+    $('#insCsv').addEventListener('click', function(){ downloadCsv(ins, d, rd, cut); });
+    [].forEach.call(box.querySelectorAll('table.ins tr.prow'), function(tr){
+      tr.addEventListener('click', function(){ state.ins.pick=+tr.dataset.pick; renderInsights(); var f=$('#fbSec'); if(f) f.scrollIntoView({behavior:'smooth', block:'start'}); });
+    });
+    var pk=$('#fbPick'); if(pk) pk.addEventListener('change', function(){ state.ins.pick=+pk.value; renderInsights(); });
+    var cp=$('#fbCopy'); if(cp) cp.addEventListener('click', function(){ copyText($('#fbText').textContent, cp); });
+  }
+
+  function copyText(t, btn){
+    var done=function(){ btn.textContent='Copied ✓'; setTimeout(function(){ btn.textContent='Copy feedback text'; }, 1600); };
+    var fallback=function(){ var ta=document.createElement('textarea'); ta.value=t; ta.style.position='fixed'; ta.style.opacity='0'; document.body.appendChild(ta); ta.select();
+      try{ document.execCommand('copy'); done(); }catch(e){ alert('Copy failed — open "Preview the feedback text" and copy it from there.'); } ta.remove(); };
+    if(navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(t).then(done, fallback); else fallback();
+  }
+
+  function downloadCsv(ins, d, rd, cut){
+    var C=d.criteria, r2=function(v){ return v==null ? '' : Math.round(v*100)/100; };
+    var head=['Rank','Name','Company','Official','Average of all judges','Relative (0-100)','Relative order','Judges above their own average','Judges counted']
+      .concat(C.map(function(c){ return c.label+' /'+c.max; })).concat(rd==='semi'?['Points below the Final cut']:[]);
+    var rows=byRank(ins.cands).map(function(c){
+      return [c.rank, c.name, c.company, c.official, r2(c.raw), c.standing==null?'':Math.round(c.standing), c.standingRank, c.above, c.n]
+        .concat(c.crit.map(function(x){ return r2(x.avg); })).concat(rd==='semi'?[cut!=null && c.official!=null && c.official<cut ? r2(cut-c.official) : '']:[]); });
+    var csv=[head].concat(rows).map(function(r){ return r.map(function(v){ v=v==null?'':String(v); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; }).join(','); }).join('\n');
+    var a=document.createElement('a'); a.href=URL.createObjectURL(new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8'}));
+    a.download='cye2026-'+(rd==='final'?'final':'semifinal')+'-insights.csv'; document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
   }
 
   function detailRow(r,d){
